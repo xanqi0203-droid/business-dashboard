@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.hotspot.daily-report</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/anqi/Desktop/cc-test/Skills/daily-report/scripts/refresh_hotspot_pipeline.sh</string>
+	</array>
+
+	<key>WorkingDirectory</key>
+	<string>/Users/anqi/Desktop/cc-test</string>
+
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>7</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+
+	<key>StandardOutPath</key>
+	<string>/Users/anqi/Desktop/cc-test/logs/launchagent.log</string>
+
+	<key>StandardErrorPath</key>
+	<string>/Users/anqi/Desktop/cc-test/logs/launchagent.log</string>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>HOME</key>
+		<string>/Users/anqi</string>
+	</dict>
+
+	<key>RunAtLoad</key>
+	<false/>
+</dict>
+</plist>

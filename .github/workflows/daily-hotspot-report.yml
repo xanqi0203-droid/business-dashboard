@@ -1,0 +1,43 @@
+name: 每日热点话题飞书推送
+
+on:
+  schedule:
+    # 每天北京时间 7:00（UTC+8 = UTC 23:00 前一天）
+    - cron: '0 23 * * *'
+  # 支持手动触发测试
+  workflow_dispatch:
+
+jobs:
+  send-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 拉取 hot-spot 数据
+        uses: actions/checkout@v4
+        with:
+          repository: Irissunsun/hot-spot
+          path: hot-spot
+
+      - name: 安装 Python 依赖
+        run: pip install openpyxl
+
+      - name: 提取 KPI 数据
+        run: |
+          mkdir -p .tmp
+          # 自动查找数据文件（支持 json/csv/xlsx）
+          DATA_FILE=$(find hot-spot -name "*.json" -o -name "*.csv" -o -name "*.xlsx" | head -1)
+          if [ -z "$DATA_FILE" ]; then
+            echo "ERROR: 未找到数据文件"
+            exit 1
+          fi
+          echo "使用数据文件: $DATA_FILE"
+          python3 Skills/daily-report/scripts/extract_hotspot_kpis.py "$DATA_FILE" --output .tmp/kpis.json
+
+      - name: 推送到飞书
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+        run: |
+          python3 Skills/daily-report/scripts/send_feishu.py --kpis .tmp/kpis.json
