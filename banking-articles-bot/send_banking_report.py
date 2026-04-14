@@ -39,6 +39,9 @@ SEARCH_KEYWORDS = [
     "银行信用卡客群运营 激活",
     "银行数字化运营 客户触达",
     "银行客户画像 精准营销 实践",
+    "site:woshipm.com 银行 客户运营",
+    "site:woshipm.com 银行 长尾客户",
+    "site:woshipm.com 手机银行 促活",
 ]
 
 # 排除明显无关的域名
@@ -133,6 +136,10 @@ def search_via_serper(keyword):
             source = '钛媒体'
         elif 'zhihu.com' in url:
             source = '知乎'
+        elif 'woshipm.com' in url:
+            source = '人人都是产品经理'
+        elif 'pmcaff.com' in url:
+            source = '人人都是产品经理'
         elif 'sohu.com' in url:
             source = '搜狐'
         elif 'sina.com' in url:
@@ -141,15 +148,11 @@ def search_via_serper(keyword):
             source = '网易'
         elif 'qq.com' in url:
             source = '腾讯'
-        elif 'csdn.net' in url:
-            source = 'CSDN'
         elif 'jianshu.com' in url:
             source = '简书'
         elif 'toutiao.com' in url:
             source = '今日头条'
         else:
-            # 从 URL 提取域名作为来源
-            import re
             match = re.search(r'https?://(?:www\.)?([^/]+)', url)
             if match:
                 source = match.group(1).split('.')[0]
