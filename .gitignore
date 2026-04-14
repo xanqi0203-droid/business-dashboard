@@ -4,6 +4,7 @@ dashboard_data.json
 full_data.json
 report_data.json
 *.py
+!banking-articles-bot/*.py
 dashboard.html
 dashboard_v2.html
 智能外呼运营报表.html
