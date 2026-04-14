@@ -24,14 +24,14 @@ FEISHU_WEBHOOK_URL = os.environ.get('FEISHU_WEBHOOK_URL', '')
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY', '')  # 可选，有则用 Serper Google Search
 
 SEARCH_KEYWORDS = [
-    "银行存量客户运营",
-    "银行长尾客户运营",
-    "银行客户精细化运营",
-    "银行私域运营策略",
-    "银行客户激活唤醒",
-    "银行客户分层运营",
-    "银行数字化客户运营",
-    "银行零售客户运营",
+    "银行存量客户运营方法论",
+    "银行长尾客群运营策略",
+    "银行存量客户精细化运营",
+    "银行客户分层运营实践",
+    "银行长尾客户价值提升",
+    "银行零售客户运营案例",
+    "银行私域客户运营",
+    "银行客户激活留存运营",
 ]
 
 HEADERS = {
@@ -68,14 +68,8 @@ def _extract_source(url):
         return '未知来源'
 
 
-def search_via_serper(keyword, count=3):
-    """使用 Serper.dev Google Search API 搜索（每月 2500 次免费）"""
-    if not SERPER_API_KEY:
-        return []
-
-    # 限定搜索微信公众号、知乎、36氪等优质来源
-    query = f'{keyword} site:mp.weixin.qq.com OR site:zhihu.com OR site:36kr.com OR site:huxiu.com'
-
+def _serper_request(query, count=3):
+    """发送单次 Serper 搜索请求，返回原始结果列表"""
     payload = json.dumps({
         'q': query,
         'num': count,
@@ -97,19 +91,48 @@ def search_via_serper(keyword, count=3):
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode('utf-8'))
-            articles = []
-            for item in data.get('organic', []):
+            return data.get('organic', [])
+    except Exception as e:
+        print(f"Serper 请求失败 ({query[:20]}...): {e}")
+        return []
+
+
+# 各来源单独搜索，控制比例：微信3篇 36氪2篇 知乎2篇 虎嗅2篇 其他1篇
+SOURCES_CONFIG = [
+    ('微信公众号', 'site:mp.weixin.qq.com', 3),
+    ('36氪',       'site:36kr.com', 2),
+    ('知乎',       'site:zhihu.com/column OR site:zhuanlan.zhihu.com', 2),
+    ('虎嗅',       'site:huxiu.com', 2),
+]
+
+
+def search_via_serper_balanced():
+    """按来源分别搜索，保证微信公众号和36氪优先，内容聚焦银行客户运营"""
+    if not SERPER_API_KEY:
+        return []
+
+    articles = []
+
+    # 随机选2个关键词，每个关键词搜索所有来源
+    selected_keywords = random.sample(SEARCH_KEYWORDS, 2)
+
+    for keyword in selected_keywords:
+        for source_name, site_filter, target_count in SOURCES_CONFIG:
+            query = f'{keyword} {site_filter}'
+            items = _serper_request(query, count=target_count)
+
+            for item in items[:target_count]:  # 严格限制每个来源的数量
                 articles.append({
                     'title': item.get('title', ''),
                     'url': item.get('link', ''),
                     'summary': item.get('snippet', ''),
-                    'source': _extract_source(item.get('link', '')),
+                    'source': source_name,
                     'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
                 })
-            return articles
-    except Exception as e:
-        print(f"Serper 搜索失败 ({keyword}): {e}")
-        return []
+
+            time.sleep(0.5)  # 避免请求过快
+
+    return articles
 
 
 # ─────────────────────────────────────────────
@@ -271,15 +294,14 @@ def collect_articles(target=10):
     """综合多种方式收集文章"""
     articles = []
 
-    # 方式1：Serper Google Search API（如果配置了 key）
+    # 方式1：Serper Google Search API（按来源均衡搜索）
     if SERPER_API_KEY:
-        print("使用 Serper Google Search API 搜索...")
-        for kw in random.sample(SEARCH_KEYWORDS, 4):
-            results = search_via_serper(kw, count=3)
-            articles.extend(results)
-            time.sleep(1)
-            if len(articles) >= target:
-                break
+        print("使用 Serper Google Search API 搜索（微信/36氪/知乎/虎嗅）...")
+        results = search_via_serper_balanced()
+        articles.extend(results)
+        print(f"  Serper 搜索到 {len(results)} 篇，各来源：" +
+              ', '.join(f"{s}×{sum(1 for a in results if a['source']==s)}"
+                        for s in ['微信公众号','36氪','知乎','虎嗅'] if any(a['source']==s for a in results)))
 
     # 方式2：RSS 订阅
     if len(articles) < target:
