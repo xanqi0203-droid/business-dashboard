@@ -118,35 +118,47 @@ def build_feishu_card(kpis: Dict[str, Any], vercel_url: str = None) -> Dict[str,
         })
         elements.append({"tag": "hr"})
 
-    # Top 话题列表
-    if "top_topics" in kpis and kpis["top_topics"]:
-        elements.append({
-            "tag": "div",
-            "text": {
-                "tag": "lark_md",
-                "content": "**📊 Top 5 热门话题**"
-            }
-        })
+    # 按分类展示热点话题
+    if "topics_by_category" in kpis and kpis["topics_by_category"]:
+        category_icons = {
+            "AI": "🤖",
+            "科技": "💻",
+            "银行": "🏦",
+            "娱乐": "🎬"
+        }
 
-        for i, topic in enumerate(kpis["top_topics"][:5], 1):
-            topic_name = topic.get("name", "未知话题")
-            heat = topic.get("heat_score", 0)
-            engagement = topic.get("engagement", 0)
-            url = topic.get("url", "")
+        for category, topics in kpis["topics_by_category"].items():
+            if not topics:
+                continue
 
-            # 如果有 URL，使用 Markdown 链接格式
-            if url:
-                topic_display = f"[{topic_name}]({url})"
-            else:
-                topic_display = topic_name
-
+            icon = category_icons.get(category, "📌")
             elements.append({
                 "tag": "div",
                 "text": {
                     "tag": "lark_md",
-                    "content": f"`{i}` **{topic_display}**\n热度: {heat:.0f} | 互动: {format_number(engagement)}"
+                    "content": f"**{icon} {category}热点**"
                 }
             })
+
+            for i, topic in enumerate(topics[:3], 1):  # 每个分类显示前3条
+                topic_name = topic.get("name", "未知话题")
+                heat = topic.get("heat_score", 0)
+                engagement = topic.get("engagement", 0)
+                url = topic.get("url", "")
+
+                # 如果有 URL，使用 Markdown 链接格式
+                if url:
+                    topic_display = f"[{topic_name}]({url})"
+                else:
+                    topic_display = topic_name
+
+                elements.append({
+                    "tag": "div",
+                    "text": {
+                        "tag": "lark_md",
+                        "content": f"`{i}` **{topic_display}**\n热度: {heat:.0f} | 互动: {format_number(engagement)}"
+                    }
+                })
 
         elements.append({"tag": "hr"})
 

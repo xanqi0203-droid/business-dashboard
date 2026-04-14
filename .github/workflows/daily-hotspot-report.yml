@@ -37,27 +37,43 @@ jobs:
             python3 Skills/daily-report/scripts/extract_hotspot_kpis.py "$DATA_FILE" --output .tmp/kpis.json
           else
             echo "未找到真实数据，使用模拟数据"
-            # 生成模拟数据
+            # 生成模拟数据（AI / 科技 / 银行 / 娱乐四大分类）
             cat > .tmp/kpis.json << 'EOFDATA'
           {
-            "total_topics": 1248,
-            "hot_topics": 87,
-            "total_engagement": 3820000,
-            "avg_heat_score": 6823.5,
-            "topics_growth": 12.3,
-            "engagement_growth": 8.7,
-            "top_topics": [
-              {"name": "AI 大模型技术突破", "heat_score": 98500, "engagement": 520000, "platform": "微博", "url": "https://weibo.com/hot/search"},
-              {"name": "新能源汽车销量创新高", "heat_score": 87200, "engagement": 430000, "platform": "抖音", "url": "https://www.douyin.com/search/新能源汽车"},
-              {"name": "国产芯片研发进展", "heat_score": 76800, "engagement": 380000, "platform": "微博", "url": "https://weibo.com/hot/search"},
-              {"name": "春季旅游热门目的地", "heat_score": 65400, "engagement": 290000, "platform": "小红书", "url": "https://www.xiaohongshu.com/explore"},
-              {"name": "体育赛事精彩瞬间", "heat_score": 54100, "engagement": 210000, "platform": "抖音", "url": "https://www.douyin.com/search/体育赛事"}
-            ],
+            "total_topics": 986,
+            "hot_topics": 64,
+            "total_engagement": 5120000,
+            "avg_heat_score": 7240.5,
+            "topics_growth": 8.5,
+            "engagement_growth": 11.2,
+            "topics_by_category": {
+              "AI": [
+                {"name": "GPT-5 正式发布，多模态能力大幅提升", "heat_score": 98500, "engagement": 620000, "platform": "微博", "url": "https://weibo.com/hot/search"},
+                {"name": "国产大模型超越 GPT-4 基准测试", "heat_score": 87300, "engagement": 490000, "platform": "知乎", "url": "https://www.zhihu.com/hot"},
+                {"name": "AI 绘画工具月活突破 1 亿", "heat_score": 72100, "engagement": 380000, "platform": "微博", "url": "https://weibo.com/hot/search"}
+              ],
+              "科技": [
+                {"name": "华为麒麟芯片最新进展曝光", "heat_score": 91200, "engagement": 540000, "platform": "微博", "url": "https://weibo.com/hot/search"},
+                {"name": "新能源汽车 3 月销量创历史新高", "heat_score": 83600, "engagement": 460000, "platform": "抖音", "url": "https://www.douyin.com/search/新能源"},
+                {"name": "苹果 Vision Pro 国行版正式开售", "heat_score": 76800, "engagement": 390000, "platform": "微博", "url": "https://weibo.com/hot/search"}
+              ],
+              "银行": [
+                {"name": "央行宣布下调存款准备金率 0.5 个百分点", "heat_score": 88400, "engagement": 410000, "platform": "微博", "url": "https://weibo.com/hot/search"},
+                {"name": "多家银行下调存款利率，理财如何应对", "heat_score": 76500, "engagement": 350000, "platform": "知乎", "url": "https://www.zhihu.com/hot"},
+                {"name": "个人养老金账户开立超 5000 万", "heat_score": 61200, "engagement": 270000, "platform": "微博", "url": "https://weibo.com/hot/search"}
+              ],
+              "娱乐": [
+                {"name": "春晚收视率创近五年新高", "heat_score": 94700, "engagement": 780000, "platform": "微博", "url": "https://weibo.com/hot/search"},
+                {"name": "某热播剧单日播放量破 3 亿", "heat_score": 85300, "engagement": 620000, "platform": "抖音", "url": "https://www.douyin.com/search/热播剧"},
+                {"name": "演唱会经济复苏，票务平台热度飙升", "heat_score": 71400, "engagement": 420000, "platform": "小红书", "url": "https://www.xiaohongshu.com/explore"}
+              ]
+            },
+            "top_topics": [],
             "platform_distribution": {
-              "微博": 412,
-              "抖音": 387,
-              "小红书": 256,
-              "知乎": 193
+              "微博": 389,
+              "抖音": 312,
+              "知乎": 178,
+              "小红书": 107
             }
           }
           EOFDATA
