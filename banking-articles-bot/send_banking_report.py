@@ -177,7 +177,7 @@ CURATED_ARTICLES = [
     {
         'title': '银行存量客户运营：从"守株待兔"到"主动出击"',
         'source': '银行家杂志',
-        'url': 'https://mp.weixin.qq.com/s/banking-stock-customer-ops',
+        'url': '',
         'summary': '存量客户是银行最重要的资产，如何通过数据驱动实现精准触达和价值提升，是当前零售银行转型的核心命题。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['存量客户', '数据驱动', '精准营销'],
@@ -185,7 +185,7 @@ CURATED_ARTICLES = [
     {
         'title': '长尾客户运营的三大核心策略：分层、激活、留存',
         'source': '金融科技研究',
-        'url': 'https://mp.weixin.qq.com/s/longtail-customer-strategy',
+        'url': '',
         'summary': '长尾客户占银行客户总量的80%以上，但贡献收益不足20%。如何通过智能化手段提升长尾客户价值，是银行数字化转型的重要课题。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['长尾客户', '客户分层', '智能化'],
@@ -193,7 +193,7 @@ CURATED_ARTICLES = [
     {
         'title': '私域运营在银行业的实践：微信生态下的客户经营',
         'source': '零售银行研究',
-        'url': 'https://mp.weixin.qq.com/s/private-domain-banking',
+        'url': '',
         'summary': '银行私域运营的核心是构建以客户为中心的服务生态，通过企业微信、小程序等工具实现客户的持续触达和价值挖掘。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['私域运营', '企业微信', '客户经营'],
@@ -201,7 +201,7 @@ CURATED_ARTICLES = [
     {
         'title': '数字化时代银行客户精细化运营体系构建',
         'source': '中国银行业',
-        'url': 'https://mp.weixin.qq.com/s/digital-customer-ops',
+        'url': '',
         'summary': '精细化运营需要建立完整的客户标签体系、触达策略矩阵和效果评估机制，形成"识别-触达-转化-留存"的完整闭环。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['精细化运营', '客户标签', '运营闭环'],
@@ -209,7 +209,7 @@ CURATED_ARTICLES = [
     {
         'title': '银行客户唤醒策略：如何激活沉睡客户',
         'source': '银行数字化转型',
-        'url': 'https://mp.weixin.qq.com/s/customer-reactivation',
+        'url': '',
         'summary': '沉睡客户唤醒是存量运营的重要组成部分，通过精准识别、个性化触达和差异化激励，可有效提升客户活跃度。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['客户唤醒', '沉睡客户', '个性化'],
@@ -217,7 +217,7 @@ CURATED_ARTICLES = [
     {
         'title': '零售银行客户分层运营实战：从理论到落地',
         'source': '银行家',
-        'url': 'https://mp.weixin.qq.com/s/retail-bank-segmentation',
+        'url': '',
         'summary': '客户分层是精细化运营的基础，本文介绍如何基于RFM模型、资产规模、行为特征构建多维度客户分层体系。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['客户分层', 'RFM模型', '零售银行'],
@@ -225,7 +225,7 @@ CURATED_ARTICLES = [
     {
         'title': '银行APP运营：如何提升月活和用户粘性',
         'source': '金融科技前沿',
-        'url': 'https://mp.weixin.qq.com/s/bank-app-operations',
+        'url': '',
         'summary': '银行APP是数字化运营的核心阵地，通过场景化服务、个性化推荐和游戏化机制，可有效提升用户活跃度和留存率。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['银行APP', '月活提升', '用户粘性'],
@@ -233,7 +233,7 @@ CURATED_ARTICLES = [
     {
         'title': '银行客户生命周期管理：全旅程运营策略',
         'source': '零售金融研究院',
-        'url': 'https://mp.weixin.qq.com/s/customer-lifecycle-banking',
+        'url': '',
         'summary': '从获客、激活、成长、成熟到流失预警，构建覆盖客户全生命周期的运营策略体系，实现客户价值最大化。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['生命周期', '全旅程运营', '流失预警'],
@@ -241,7 +241,7 @@ CURATED_ARTICLES = [
     {
         'title': '大数据驱动的银行客户画像构建与应用',
         'source': '数字金融观察',
-        'url': 'https://mp.weixin.qq.com/s/big-data-customer-profile',
+        'url': '',
         'summary': '客户画像是精准运营的基础，通过整合行内外数据，构建360度客户视图，为差异化服务和精准营销提供数据支撑。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['客户画像', '大数据', '精准营销'],
@@ -249,7 +249,7 @@ CURATED_ARTICLES = [
     {
         'title': '银行理财客户运营：从产品销售到资产配置服务',
         'source': '财富管理研究',
-        'url': 'https://mp.weixin.qq.com/s/wealth-management-ops',
+        'url': '',
         'summary': '理财客户运营正从单纯的产品销售转向综合资产配置服务，通过投资者教育、陪伴式服务提升客户满意度和资产留存。',
         'publish_date': datetime.now().strftime('%Y-%m-%d'),
         'tags': ['理财客户', '资产配置', '财富管理'],
