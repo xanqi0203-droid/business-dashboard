@@ -1,0 +1,34 @@
+name: 银行客户运营文章每日推送
+
+on:
+  schedule:
+    # 每天北京时间 09:00（UTC 01:00）
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  send-articles:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 运行推送脚本
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+        run: python banking-articles-bot/send_banking_report.py
+
+      - name: 上传调试日志（失败时）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: banking-articles-debug
+          path: /tmp/banking_articles.json
+          if-no-files-found: ignore
