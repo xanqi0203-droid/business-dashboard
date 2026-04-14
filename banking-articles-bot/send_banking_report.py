@@ -24,14 +24,18 @@ FEISHU_WEBHOOK_URL = os.environ.get('FEISHU_WEBHOOK_URL', '')
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY', '')
 
 SEARCH_KEYWORDS = [
-    "银行存量客户运营方法论",
-    "银行长尾客群运营策略",
-    "银行存量客户精细化运营",
-    "银行客户分层运营实践",
-    "银行长尾客户价值提升",
-    "银行零售客户运营案例",
-    "银行私域客户运营",
-    "银行客户激活留存运营",
+    "银行存量客户运营 AUM提升",
+    "银行长尾客户激活 案例",
+    "银行代发薪客群运营 策略",
+    "手机银行促活 方法论",
+    "银行客户分层运营 实践",
+    "银行存量客户资产提升 路径",
+    "银行沉睡客户唤醒 运营",
+    "银行私域运营 企业微信",
+    "银行客户生命周期管理 实战",
+    "银行零售客户精细化运营 案例",
+    "银行APP月活提升 策略",
+    "银行客户留存 运营体系",
 ]
 
 HEADERS = {
@@ -81,11 +85,11 @@ def search_via_serper(keyword):
     results = []
 
     sources = [
-        ('36kr.com',            '36氪',   2),
-        ('huxiu.com',           '虎嗅',   2),
-        ('iyiou.com',           '亿欧',   2),
-        ('tmtpost.com',         '钛媒体', 1),
-        ('xueqiu.com',          '雪球',   1),
+        ('36kr.com',            '36氪',     2),
+        ('huxiu.com',           '虎嗅',     2),
+        ('iyiou.com',           '亿欧',     2),
+        ('tmtpost.com',         '钛媒体',   2),
+        ('sohu.com/a',          '搜狐号',   1),
         ('zhuanlan.zhihu.com',  '知乎专栏', 2),
     ]
 
@@ -94,12 +98,25 @@ def search_via_serper(keyword):
         for item in items[:limit]:
             title = item.get('title', '').strip()
             url = item.get('link', '').strip()
+            snippet = item.get('snippet', '').strip()
+
             if not title or not url:
                 continue
+
+            # 内容相关性过滤：标题或摘要必须包含银行运营相关关键词
+            text = title + snippet
+            relevant_keywords = [
+                '银行', '客户运营', '存量', '长尾', 'AUM', '资产',
+                '代发薪', '手机银行', '促活', '激活', '留存', '唤醒',
+                '私域', '企业微信', '分层', '精细化', '零售'
+            ]
+            if not any(kw in text for kw in relevant_keywords):
+                continue
+
             results.append({
                 'title': title,
                 'url': url,
-                'summary': item.get('snippet', ''),
+                'summary': snippet,
                 'source': source_name,
                 'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
             })
