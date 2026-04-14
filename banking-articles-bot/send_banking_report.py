@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 银行存量客户/长尾客户运营文章搜索 + 飞书推送
-使用 Serper.dev (Google Search API) 搜索 36氪/虎嗅/亿欧/钛媒体/雪球/知乎专栏
+使用 Serper.dev (Google Search API) 不限平台搜索最相关内容
 """
 
 import json
@@ -23,19 +23,29 @@ import xml.etree.ElementTree as ET
 FEISHU_WEBHOOK_URL = os.environ.get('FEISHU_WEBHOOK_URL', '')
 SERPER_API_KEY = os.environ.get('SERPER_API_KEY', '')
 
+# 每天随机选3个关键词，每个词搜4条，共12条去重后取10篇
 SEARCH_KEYWORDS = [
-    "银行存量客户运营 AUM提升",
-    "银行长尾客户激活 案例",
-    "银行代发薪客群运营 策略",
-    "手机银行促活 方法论",
-    "银行客户分层运营 实践",
-    "银行存量客户资产提升 路径",
-    "银行沉睡客户唤醒 运营",
-    "银行私域运营 企业微信",
-    "银行客户生命周期管理 实战",
-    "银行零售客户精细化运营 案例",
-    "银行APP月活提升 策略",
-    "银行客户留存 运营体系",
+    "银行存量客户运营 方法论 案例",
+    "银行长尾客群激活 运营策略",
+    "代发薪客群运营 银行 实践",
+    "手机银行月活促活 运营方案",
+    "银行AUM资产提升 存量客户",
+    "银行沉睡客户唤醒 运营方法",
+    "银行私域运营 企业微信 客户经营",
+    "银行客户分层运营 精细化",
+    "零售银行客户价值提升 实战",
+    "银行客户流失预警 留存策略",
+    "银行理财客户运营 资产配置",
+    "银行信用卡客群运营 激活",
+    "银行数字化运营 客户触达",
+    "银行客户画像 精准营销 实践",
+]
+
+# 排除明显无关的域名
+EXCLUDE_DOMAINS = [
+    'zhaopin.com', 'liepin.com', '51job.com',  # 招聘
+    'taobao.com', 'jd.com', 'tmall.com',       # 电商
+    'weibo.com', 'douyin.com',                  # 社交
 ]
 
 HEADERS = {
@@ -43,6 +53,15 @@ HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Accept-Language': 'zh-CN,zh;q=0.9',
 }
+
+# 内容相关性关键词（标题或摘要必须命中至少1个）
+RELEVANT_KEYWORDS = [
+    '存量客户', '长尾客户', '长尾客群', '代发薪', '手机银行',
+    'AUM', '月活', '促活', '客户激活', '沉睡客户', '唤醒',
+    '客户运营', '私域运营', '企业微信', '客户分层', '精细化运营',
+    '零售银行', '客户留存', '流失预警', '资产提升', '客户触达',
+    '理财客户', '信用卡客群', '客户画像', '客户经营', '客户价值',
+]
 
 
 # ─────────────────────────────────────────────
@@ -78,49 +97,70 @@ def _serper_request(query, count=3):
 
 
 def search_via_serper(keyword):
-    """用 Serper 搜索 36氪/虎嗅/亿欧/钛媒体/雪球/知乎专栏，保证来源多样性"""
+    """直接搜索关键词，不限定平台，让 Google 返回最相关的结果"""
     if not SERPER_API_KEY:
         return []
 
+    items = _serper_request(keyword, count=5)
     results = []
 
-    sources = [
-        ('36kr.com',            '36氪',     2),
-        ('huxiu.com',           '虎嗅',     2),
-        ('iyiou.com',           '亿欧',     2),
-        ('tmtpost.com',         '钛媒体',   2),
-        ('sohu.com/a',          '搜狐号',   1),
-        ('zhuanlan.zhihu.com',  '知乎专栏', 2),
-    ]
+    for item in items:
+        title = item.get('title', '').strip()
+        url = item.get('link', '').strip()
+        snippet = item.get('snippet', '').strip()
 
-    for site, source_name, limit in sources:
-        items = _serper_request(f'{keyword} site:{site}', count=limit)
-        for item in items[:limit]:
-            title = item.get('title', '').strip()
-            url = item.get('link', '').strip()
-            snippet = item.get('snippet', '').strip()
+        if not title or not url:
+            continue
 
-            if not title or not url:
-                continue
+        # 排除招聘、电商等无关域名
+        if any(domain in url for domain in EXCLUDE_DOMAINS):
+            continue
 
-            # 内容相关性过滤：标题或摘要必须包含银行运营相关关键词
-            text = title + snippet
-            relevant_keywords = [
-                '银行', '客户运营', '存量', '长尾', 'AUM', '资产',
-                '代发薪', '手机银行', '促活', '激活', '留存', '唤醒',
-                '私域', '企业微信', '分层', '精细化', '零售'
-            ]
-            if not any(kw in text for kw in relevant_keywords):
-                continue
+        # 内容相关性过滤：标题或摘要必须包含银行运营相关关键词
+        text = title + snippet
+        if not any(kw in text for kw in RELEVANT_KEYWORDS):
+            continue
 
-            results.append({
-                'title': title,
-                'url': url,
-                'summary': snippet,
-                'source': source_name,
-                'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
-            })
-        time.sleep(0.5)
+        # 提取来源（从域名推断）
+        source = '未知来源'
+        if '36kr.com' in url:
+            source = '36氪'
+        elif 'huxiu.com' in url:
+            source = '虎嗅'
+        elif 'iyiou.com' in url:
+            source = '亿欧'
+        elif 'tmtpost.com' in url:
+            source = '钛媒体'
+        elif 'zhihu.com' in url:
+            source = '知乎'
+        elif 'sohu.com' in url:
+            source = '搜狐'
+        elif 'sina.com' in url:
+            source = '新浪'
+        elif '163.com' in url:
+            source = '网易'
+        elif 'qq.com' in url:
+            source = '腾讯'
+        elif 'csdn.net' in url:
+            source = 'CSDN'
+        elif 'jianshu.com' in url:
+            source = '简书'
+        elif 'toutiao.com' in url:
+            source = '今日头条'
+        else:
+            # 从 URL 提取域名作为来源
+            import re
+            match = re.search(r'https?://(?:www\.)?([^/]+)', url)
+            if match:
+                source = match.group(1).split('.')[0]
+
+        results.append({
+            'title': title,
+            'url': url,
+            'summary': snippet,
+            'source': source,
+            'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
+        })
 
     return results
 
@@ -183,13 +223,15 @@ def collect_articles(target=10):
     """综合多种方式收集文章"""
     articles = []
 
-    # 方式1：Serper 搜索 36氪/虎嗅/亿欧/钛媒体/雪球/知乎专栏
+    # 方式1：Serper 不限平台搜索，每天随机选3个关键词
     if SERPER_API_KEY:
-        keyword = random.choice(SEARCH_KEYWORDS)
-        print(f"Serper 搜索关键词：{keyword}")
-        serper_articles = search_via_serper(keyword)
-        articles.extend(serper_articles)
-        print(f"  → 获取到 {len(serper_articles)} 篇文章")
+        keywords = random.sample(SEARCH_KEYWORDS, min(3, len(SEARCH_KEYWORDS)))
+        for keyword in keywords:
+            print(f"搜索：{keyword}")
+            results = search_via_serper(keyword)
+            articles.extend(results)
+            print(f"  → 获取到 {len(results)} 篇")
+            time.sleep(1)
     else:
         print("未配置 SERPER_API_KEY，跳过 Serper 搜索")
 
@@ -201,7 +243,7 @@ def collect_articles(target=10):
             articles.extend(results)
             time.sleep(1)
 
-    # 去重
+    # 去重（按标题）
     seen = set()
     unique = []
     for a in articles:
@@ -259,7 +301,7 @@ def build_feishu_card(articles):
         'tag': 'note',
         'elements': [{
             'tag': 'plain_text',
-            'content': f'数据来源：36氪 / 虎嗅 / 亿欧 / 钛媒体 / 雪球 / 知乎专栏 | 每日 09:00 自动推送 | {today}'
+            'content': f'数据来源：Google 全网搜索（36氪/虎嗅/知乎/搜狐/网易等）| 每日 09:00 自动推送 | {today}'
         }]
     })
 
