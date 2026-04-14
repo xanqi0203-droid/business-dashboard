@@ -93,46 +93,103 @@ def _serper_request(query, count=3):
             data = json.loads(resp.read().decode('utf-8'))
             return data.get('organic', [])
     except Exception as e:
-        print(f"Serper 请求失败 ({query[:20]}...): {e}")
+        print(f"Serper 请求失败 ({query[:30]}): {e}")
         return []
 
 
-# 各来源单独搜索，控制比例：微信3篇 36氪2篇 知乎2篇 虎嗅2篇 其他1篇
-SOURCES_CONFIG = [
-    ('微信公众号', 'site:mp.weixin.qq.com', 3),
-    ('36氪',       'site:36kr.com', 2),
-    ('知乎',       'site:zhihu.com/column OR site:zhuanlan.zhihu.com', 2),
-    ('虎嗅',       'site:huxiu.com', 2),
-]
+# ─────────────────────────────────────────────
+# 搜狗微信搜索（专门抓微信公众号文章）
+# ─────────────────────────────────────────────
+def search_wechat_sogou(keyword, count=4):
+    """通过搜狗微信搜索抓取公众号文章"""
+    articles = []
+    try:
+        url = f"https://weixin.sogou.com/weixin?type=2&query={quote(keyword)}&ie=utf8&s_from=input&_sug_=n&_sug_type_=&w=01019900&sut=1877&sst0=1700000000000&lkt=0%2C0%2C0"
+        req = urllib.request.Request(url, headers={
+            **HEADERS,
+            'Referer': 'https://weixin.sogou.com/',
+        })
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read().decode('utf-8', errors='ignore')
+
+        # 解析文章标题和链接
+        title_pattern = re.compile(r'<h3[^>]*>\s*<a[^>]+href="([^"]+)"[^>]*>(.*?)</a>', re.DOTALL)
+        account_pattern = re.compile(r'class="account"[^>]*>(.*?)</p>', re.DOTALL)
+        summary_pattern = re.compile(r'class="txt-info[^"]*"[^>]*>(.*?)</p>', re.DOTALL)
+
+        titles = title_pattern.findall(html)
+        accounts = account_pattern.findall(html)
+        summaries = summary_pattern.findall(html)
+
+        for i, (link, title) in enumerate(titles[:count]):
+            clean_title = re.sub(r'<[^>]+>', '', title).strip()
+            clean_title = re.sub(r'\s+', ' ', clean_title)
+            if not clean_title:
+                continue
+
+            account = re.sub(r'<[^>]+>', '', accounts[i]).strip() if i < len(accounts) else '微信公众号'
+            summary = re.sub(r'<[^>]+>', '', summaries[i]).strip()[:150] if i < len(summaries) else ''
+
+            # 搜狗链接需要跳转，直接用搜狗链接
+            real_link = link if link.startswith('http') else f"https://weixin.sogou.com{link}"
+
+            articles.append({
+                'title': clean_title,
+                'url': real_link,
+                'summary': summary,
+                'source': f'微信公众号｜{account}' if account else '微信公众号',
+                'publish_date': datetime.now().strftime('%Y-%m-%d'),
+            })
+
+    except Exception as e:
+        print(f"搜狗微信搜索失败 ({keyword}): {e}")
+
+    return articles
 
 
-def search_via_serper_balanced():
-    """按来源分别搜索，保证微信公众号和36氪优先，内容聚焦银行客户运营"""
+def search_via_serper_nonwechat(keyword, count=3):
+    """用 Serper 搜索非微信平台（36氪/虎嗅/知乎），排除知乎独占"""
     if not SERPER_API_KEY:
         return []
 
-    articles = []
+    results = []
 
-    # 随机选2个关键词，每个关键词搜索所有来源
-    selected_keywords = random.sample(SEARCH_KEYWORDS, 2)
+    # 36氪
+    items_36kr = _serper_request(f'{keyword} site:36kr.com', count=2)
+    for item in items_36kr[:2]:
+        results.append({
+            'title': item.get('title', ''),
+            'url': item.get('link', ''),
+            'summary': item.get('snippet', ''),
+            'source': '36氪',
+            'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
+        })
+    time.sleep(0.5)
 
-    for keyword in selected_keywords:
-        for source_name, site_filter, target_count in SOURCES_CONFIG:
-            query = f'{keyword} {site_filter}'
-            items = _serper_request(query, count=target_count)
+    # 虎嗅
+    items_huxiu = _serper_request(f'{keyword} site:huxiu.com', count=2)
+    for item in items_huxiu[:2]:
+        results.append({
+            'title': item.get('title', ''),
+            'url': item.get('link', ''),
+            'summary': item.get('snippet', ''),
+            'source': '虎嗅',
+            'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
+        })
+    time.sleep(0.5)
 
-            for item in items[:target_count]:  # 严格限制每个来源的数量
-                articles.append({
-                    'title': item.get('title', ''),
-                    'url': item.get('link', ''),
-                    'summary': item.get('snippet', ''),
-                    'source': source_name,
-                    'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
-                })
+    # 知乎（限量，只补缺）
+    items_zhihu = _serper_request(f'{keyword} site:zhuanlan.zhihu.com', count=2)
+    for item in items_zhihu[:2]:
+        results.append({
+            'title': item.get('title', ''),
+            'url': item.get('link', ''),
+            'summary': item.get('snippet', ''),
+            'source': '知乎',
+            'publish_date': item.get('date', datetime.now().strftime('%Y-%m-%d')),
+        })
 
-            time.sleep(0.5)  # 避免请求过快
-
-    return articles
+    return results
 
 
 # ─────────────────────────────────────────────
@@ -294,14 +351,23 @@ def collect_articles(target=10):
     """综合多种方式收集文章"""
     articles = []
 
-    # 方式1：Serper Google Search API（按来源均衡搜索）
+    # 方式1：搜狗微信（专门抓公众号）+ Serper（36氪/虎嗅/知乎）
     if SERPER_API_KEY:
-        print("使用 Serper Google Search API 搜索（微信/36氪/知乎/虎嗅）...")
-        results = search_via_serper_balanced()
-        articles.extend(results)
-        print(f"  Serper 搜索到 {len(results)} 篇，各来源：" +
-              ', '.join(f"{s}×{sum(1 for a in results if a['source']==s)}"
-                        for s in ['微信公众号','36氪','知乎','虎嗅'] if any(a['source']==s for a in results)))
+        keyword = random.choice(SEARCH_KEYWORDS)
+        print(f"搜索关键词：{keyword}")
+
+        # 搜狗微信：目标3篇公众号文章
+        print("  → 搜狗微信搜索公众号文章...")
+        wechat_articles = search_wechat_sogou(keyword, count=4)
+        articles.extend(wechat_articles[:3])
+        print(f"     获取到 {len(wechat_articles[:3])} 篇微信公众号文章")
+        time.sleep(1)
+
+        # Serper：36氪/虎嗅/知乎各2篇
+        print("  → Serper 搜索 36氪/虎嗅/知乎...")
+        other_articles = search_via_serper_nonwechat(keyword, count=2)
+        articles.extend(other_articles)
+        print(f"     获取到 {len(other_articles)} 篇其他平台文章")
 
     # 方式2：RSS 订阅
     if len(articles) < target:
