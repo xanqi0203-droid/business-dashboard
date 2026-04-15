@@ -25,10 +25,16 @@ jobs:
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         run: python banking-articles-bot/send_banking_report.py
 
-      - name: 上传调试日志（失败时）
+      - name: 推送失败通知到飞书
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: banking-articles-debug
-          path: /tmp/banking_articles.json
-          if-no-files-found: ignore
+        env:
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$FEISHU_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msg_type\": \"text\",
+              \"content\": {
+                \"text\": \"⚠️ 银行客户运营文章推送失败\n时间：$(date '+%Y-%m-%d %H:%M:%S') (UTC)\n原因：GitHub Actions 运行出错，请检查 https://github.com/xanqi0203-droid/business-dashboard/actions\"
+              }
+            }"
