@@ -9,6 +9,8 @@ on:
 jobs:
   send-articles:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 允许 git push
 
     steps:
       - name: 拉取代码
@@ -24,6 +26,16 @@ jobs:
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
         run: python banking-articles-bot/send_banking_report.py
+
+      - name: 保持仓库活跃（防止 GitHub 暂停定时任务）
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "$(date '+%Y-%m-%d %H:%M:%S')" > banking-articles-bot/.last_run
+          git add banking-articles-bot/.last_run
+          git commit -m "chore: 每日推送记录 $(date '+%Y-%m-%d')" || echo "无变更，跳过"
+          git push
 
       - name: 推送失败通知到飞书
         if: failure()
