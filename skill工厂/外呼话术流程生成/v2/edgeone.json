@@ -1,0 +1,17 @@
+{
+  "name": "bank-customer-ops-v2",
+  "version": "2.0.0",
+  "build": {
+    "command": "",
+    "outputDirectory": "public"
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/cloud-functions/[[default]]"
+    }
+  ],
+  "env": {
+    "NODE_VERSION": "20"
+  }
+}
