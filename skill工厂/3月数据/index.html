@@ -1,0 +1,2534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>法律推广数据看板</title>
+<script src="xlsx.full.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+    --bg: #e9eef4;
+    --panel: #ffffff;
+    --panel-2: #f6f8fb;
+    --border: #e8ecf2;
+    --border-2: #eef1f6;
+    --text: #2b3445;
+    --text-2: #6b7688;
+    --text-3: #9aa4b4;
+    --primary: #3d6ef5;
+    --primary-2: #5b86f7;
+    --primary-soft: #eaf0fe;
+    --primary-soft-2: #d8e3fd;
+    --accent: #3d6ef5;
+    --accent-light: #aac6fb;
+    --warn: #f59e0b;
+    --warn-soft: #fef4e3;
+    --danger: #ef4444;
+    --danger-soft: #fdeaea;
+    --success: #10b981;
+    --success-soft: #e6f7f1;
+    --shadow-sm: 0 1px 2px rgba(45, 62, 102, 0.06);
+    --shadow: 0 2px 8px rgba(45, 62, 102, 0.08);
+    --shadow-lg: 0 16px 40px rgba(45, 62, 102, 0.16);
+}
+html, body { height: 100%; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    background: var(--bg);
+    background-image:
+        radial-gradient(at 18% -5%, rgba(79, 107, 237, 0.06) 0%, transparent 45%),
+        radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+/* ===== Sidebar ===== */
+.sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 10;
+}
+.brand {
+    padding: 22px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+}
+.brand-logo {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-2));
+    display: grid; place-items: center;
+    color: #ffffff; font-size: 18px; font-weight: 800;
+    box-shadow: 0 4px 10px rgba(79, 107, 237, 0.28);
+}
+.brand-text h1 { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: 0.3px; }
+.brand-text p { font-size: 11px; color: var(--text-3); margin-top: 2px; letter-spacing: 1px; }
+.nav { padding: 12px 10px; flex: 1; }
+.nav-group { margin-bottom: 2px; }
+.nav-l1 {
+    width: 100%;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+}
+.nav-l1:hover { background: var(--panel-2); color: var(--text); }
+.nav-l1.active {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 600;
+}
+.nav-icon { font-size: 16px; }
+.nav-text { flex: 1; }
+.nav-arrow {
+    font-size: 9px; color: var(--text-3);
+    transition: transform 0.25s;
+}
+.nav-group.active .nav-arrow { transform: rotate(180deg); color: var(--primary); }
+.nav-l2 {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+.nav-group.active .nav-l2 { max-height: 240px; }
+.nav-l2 a {
+    display: block;
+    padding: 7px 12px 7px 40px;
+    color: var(--text-3);
+    font-size: 12px;
+    text-decoration: none;
+    border-radius: 6px;
+    margin: 1px 4px;
+    transition: all 0.15s;
+    position: relative;
+}
+.nav-l2 a::before {
+    content: '';
+    position: absolute;
+    left: 26px; top: 50%;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--text-3);
+    transform: translateY(-50%);
+    transition: all 0.15s;
+}
+.nav-l2 a:hover { color: var(--primary); background: var(--panel-2); }
+.nav-l2 a:hover::before { background: var(--primary); }
+.sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-3);
+    line-height: 1.6;
+}
+/* ===== Main ===== */
+.main {
+    flex: 1;
+    min-width: 0;
+    padding: 22px 26px 40px;
+    overflow-x: auto;
+}
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
+    padding: 16px 0 12px;
+    border-bottom: 1px solid var(--border);
+}
+.page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.page-title::before {
+    content: '';
+    width: 4px; height: 18px;
+    background: linear-gradient(180deg, var(--primary), var(--primary-2));
+    border-radius: 2px;
+}
+.topbar {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 70px;
+    z-index: 4;
+}
+.topbar-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.topbar-row + .topbar-row { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.data-info {
+    font-size: 12px;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border: 1px solid var(--primary-soft-2);
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+.date-filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; }
+.filter-label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+.quick-btn {
+    padding: 6px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+.quick-btn:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary-soft-2); }
+.quick-btn.active {
+    background: var(--primary);
+    color: #ffffff;
+    font-weight: 600;
+    border-color: var(--primary);
+    box-shadow: 0 2px 6px rgba(79, 107, 237, 0.25);
+}
+.date-inputs { display: flex; align-items: center; gap: 6px; }
+.date-inputs input[type="date"] {
+    padding: 5px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    color-scheme: light;
+}
+.date-inputs span { color: var(--text-3); font-size: 12px; }
+.upload-area { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.upload-group {
+    display: flex; align-items: center;
+    gap: 6px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+.upload-group-label {
+    font-size: 11px;
+    color: var(--text-3);
+    font-weight: 500;
+    white-space: nowrap;
+}
+.upload-btn {
+    padding: 6px 12px;
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.upload-btn:hover { background: var(--primary-2); box-shadow: 0 2px 8px rgba(79, 107, 237, 0.3); transform: translateY(-1px); }
+.upload-btn.success { background: var(--success); color: #ffffff; }
+.upload-btn.success:hover { background: #047857; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3); }
+.upload-btn.clear-btn { background: var(--danger-soft); color: var(--danger); border: 1px solid #f3c6c8; }
+.upload-btn.clear-btn:hover { background: #f9dadc; box-shadow: none; }
+.upload-btn.export-all-btn { background: var(--success); color: #ffffff; border: none; }
+.upload-btn.export-all-btn:hover { background: #047857; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3); }
+.export-btn {
+    margin-left: auto;
+    padding: 4px 10px;
+    font-size: 11px;
+    border: 1px solid #bfe3d4;
+    border-radius: 6px;
+    background: var(--success-soft);
+    color: var(--success);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-weight: 500;
+}
+.export-btn:hover { background: #d5efe4; }
+.last-sync { font-size: 11px; color: var(--text-3); margin-top: 8px; padding-left: 2px; }
+/* ===== Tab content ===== */
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+}
+.subsection { margin-bottom: 30px; scroll-margin-top: 16px; }
+.subsection:last-child { margin-bottom: 0; }
+.subsection-title {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 16px;
+    font-weight: 600;
+    padding: 8px 14px;
+    background: var(--primary-soft);
+    border-left: 3px solid var(--primary);
+    border-radius: 0 6px 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.subsection-title::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--primary);
+}
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    background: var(--panel);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+th, td {
+    padding: 11px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border-2);
+    color: var(--text-2);
+}
+th:last-child, td:last-child { border-right: none; }
+tr:last-child td { border-bottom: none; }
+th {
+    background: #f0f4fb;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 11.5px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border-2);
+    letter-spacing: 0.2px;
+}
+tbody td:first-child, tr td:first-child { color: var(--text); font-weight: 500; }
+tr:nth-child(even) td { background: #fafbfd; }
+tr:hover td { background: var(--primary-soft); color: var(--text); }
+.total-row td {
+    background: var(--warn-soft) !important;
+    color: var(--warn) !important;
+    font-weight: 700;
+    border-color: #f5e2c0;
+}
+.total-row:hover td { background: #fcecd0 !important; }
+.sub-total-row td {
+    background: var(--primary-soft) !important;
+    color: var(--primary) !important;
+    font-weight: 600;
+    border-color: var(--primary-soft-2);
+}
+.sub-total-row:hover td { background: var(--primary-soft-2) !important; }
+/* ===== Clickable sales row in small-deal summary ===== */
+.sd-sales-row { cursor: pointer; transition: background 0.15s; }
+.sd-sales-row td:first-child { color: var(--primary); font-weight: 600; text-decoration: underline dotted; text-underline-offset: 3px; }
+.sd-sales-row:hover td { background: var(--primary-soft) !important; color: var(--primary); }
+.sd-sales-row.active td {
+    background: rgba(61, 110, 245, 0.16) !important;
+    color: var(--primary) !important;
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+/* ===== Clickable 负责人 in large-amount summary ===== */
+.la-owner { cursor: pointer; transition: background 0.15s; }
+.la-owner span.la-owner-name { text-decoration: underline dotted; text-underline-offset: 3px; }
+.la-owner:hover { background: var(--primary-soft) !important; color: var(--primary) !important; }
+.la-owner.active {
+    background: rgba(61, 110, 245, 0.16) !important;
+    color: var(--primary) !important;
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+/* ===== Lead detail link & modal ===== */
+.detail-link {
+    color: var(--primary);
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.detail-link:hover { text-decoration: underline; color: var(--primary-2); }
+.modal-mask {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 52, 69, 0.42);
+    backdrop-filter: blur(3px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+.modal-mask.open { display: flex; animation: fadeIn 0.2s ease; }
+.modal-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: min(760px, 100%);
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+}
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--primary-soft);
+    border-radius: 14px 14px 0 0;
+}
+.modal-close {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+}
+.modal-close:hover { background: var(--danger-soft); color: var(--danger); border-color: #f3c6c8; }
+.modal-body { padding: 8px 20px 20px; overflow-y: auto; }
+.detail-grid {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 12px;
+}
+.detail-grid .dk, .detail-grid .dv {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border-2);
+    font-size: 12.5px;
+    word-break: break-all;
+}
+.detail-grid .dk {
+    color: var(--text-2);
+    background: var(--panel-2);
+    font-weight: 600;
+}
+.detail-grid .dv { color: var(--text); }
+.detail-grid .dv.empty { color: var(--text-3); font-style: italic; }
+/* ===== Insight & Action ===== */
+.insight-box {
+    background: var(--primary-soft);
+    border: 1px solid var(--primary-soft-2);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin-top: 22px;
+    border-radius: 8px;
+}
+.insight-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+}
+.insight-content { font-size: 13px; line-height: 1.75; color: var(--text-2); }
+.insight-content p { margin-bottom: 8px; }
+.insight-content p:last-child { margin-bottom: 0; }
+.insight-content strong { color: var(--text); font-weight: 600; }
+.action-box {
+    background: var(--warn-soft);
+    border: 1px solid #f5e2c0;
+    border-left: 3px solid var(--warn);
+    padding: 16px 20px;
+    margin-top: 12px;
+    border-radius: 8px;
+}
+.action-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--warn);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+}
+.action-list { list-style: none; padding: 0; }
+.action-item {
+    background: var(--panel);
+    border: 1px solid #f5e2c0;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--text-2);
+}
+.action-item:last-child { margin-bottom: 0; }
+.action-item strong { color: var(--warn); font-weight: 600; }
+/* ===== Pie Charts ===== */
+.pie-chart-group {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.pie-wrap {
+    flex: 1;
+    min-width: 220px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+}
+.pie-wrap h4 {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+.pie-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+    margin-top: 12px;
+}
+.pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-2);
+}
+.pie-legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.profile-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.profile-filter-bar select {
+    padding: 6px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    color-scheme: light;
+    cursor: pointer;
+}
+/* ===== Multi-select dropdown (表内筛选) ===== */
+.ms { position: relative; display: inline-block; }
+.ms-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 132px;
+    justify-content: space-between;
+}
+.ms-btn:hover { border-color: var(--primary-soft-2); }
+.ms.open .ms-btn { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+.ms-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+.ms-arrow { font-size: 10px; color: var(--text-3); transition: transform .15s; }
+.ms.open .ms-arrow { transform: rotate(180deg); }
+.ms-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 50;
+    min-width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+}
+.ms.open .ms-panel { display: block; }
+.ms-opt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.ms-opt:hover { background: var(--primary-soft); }
+.ms-opt input { accent-color: var(--primary); cursor: pointer; margin: 0; }
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cdd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #b3bdcc; }
+/* ===== Responsive ===== */
+@media (max-width: 1100px) {
+    .sidebar { width: 200px; }
+    .main { padding: 16px 18px 30px; }
+    .section { padding: 18px 20px; }
+}
+@media (max-width: 820px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+    .sidebar-footer { display: none; }
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-logo">⚡</div>
+        <div class="brand-text">
+            <h1>法律推广</h1>
+            <p>DATA DASHBOARD</p>
+        </div>
+    </div>
+    <nav class="nav">
+        <div class="nav-group active" data-tab="0">
+            <button class="nav-l1 active" onclick="switchTab(0, this)">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">综合数据</span>
+                <span class="nav-arrow">▾</span>
+            </button>
+            <div class="nav-l2">
+                <a href="#sec-overview" onclick="scrollSec(event,'sec-overview')">综合数据</a>
+                <a href="#sec-sales" onclick="scrollSec(event,'sec-sales')">销售成交分析</a>
+                <a href="#sec-channel" onclick="scrollSec(event,'sec-channel')">分渠道分析</a>
+                <a href="#sec-history" onclick="scrollSec(event,'sec-history')">历史线索成交</a>
+            </div>
+        </div>
+        <div class="nav-group" data-tab="1">
+            <button class="nav-l1" onclick="switchTab(1, this)">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">案源结构</span>
+                <span class="nav-arrow">▾</span>
+            </button>
+            <div class="nav-l2">
+                <a href="#sec-amount" onclick="scrollSec(event,'sec-amount')">标的额结构</a>
+                <a href="#sec-casetype" onclick="scrollSec(event,'sec-casetype')">案件类型结构</a>
+            </div>
+        </div>
+        <div class="nav-group" data-tab="2">
+            <button class="nav-l1" onclick="switchTab(2, this)">
+                <span class="nav-icon">📞</span>
+                <span class="nav-text">销售跟进</span>
+                <span class="nav-arrow">▾</span>
+            </button>
+            <div class="nav-l2">
+                <a href="#sec-behavior" onclick="scrollSec(event,'sec-behavior')">跟进行为分析</a>
+                <a href="#sec-hourly" onclick="scrollSec(event,'sec-hourly')">时段拨打 &amp; 接通率</a>
+                <a href="#sec-sales-amount" onclick="scrollSec(event,'sec-sales-amount')">标的额跟进</a>
+                <a href="#sec-sales-case" onclick="scrollSec(event,'sec-sales-case')">案件类型跟进</a>
+            </div>
+        </div>
+        <div class="nav-group" data-tab="3">
+            <button class="nav-l1" onclick="switchTab(3, this)">
+                <span class="nav-icon">📣</span>
+                <span class="nav-text">推广数据</span>
+                <span class="nav-arrow">▾</span>
+            </button>
+            <div class="nav-l2">
+                <a href="#sec-promo" onclick="scrollSec(event,'sec-promo')">推广渠道汇总</a>
+            </div>
+        </div>
+        <div class="nav-group" data-tab="4">
+            <button class="nav-l1" onclick="switchTab(4, this)">
+                <span class="nav-icon">👑</span>
+                <span class="nav-text">大额标的</span>
+                <span class="nav-arrow">▾</span>
+            </button>
+            <div class="nav-l2">
+                <a href="#sec-large-amount" onclick="scrollSec(event,'sec-large-amount')">大额标的数据情况</a>
+                <a href="#sec-large-detail" onclick="scrollSec(event,'sec-large-detail')">大额标的线索详情</a>
+            </div>
+        </div>
+        <div class="nav-group" data-tab="5">
+            <button class="nav-l1" onclick="switchTab(5, this)">
+                <span class="nav-icon">💴</span>
+                <span class="nav-text">小额成交</span>
+                <span class="nav-arrow">▾</span>
+            </button>
+            <div class="nav-l2">
+                <a href="#sec-small-deal" onclick="scrollSec(event,'sec-small-deal')">小额成交汇总</a>
+                <a href="#sec-small-detail" onclick="scrollSec(event,'sec-small-detail')">小额成交线索详情</a>
+            </div>
+        </div>
+        <div class="nav-group" data-tab="6">
+            <button class="nav-l1" onclick="switchTab(6, this)">
+                <span class="nav-icon">👤</span>
+                <span class="nav-text">画像分析</span>
+                <span class="nav-arrow">▾</span>
+            </button>
+            <div class="nav-l2">
+                <a href="#sec-profile-leads" onclick="scrollSec(event,'sec-profile-leads')">线索画像</a>
+                <a href="#sec-profile-visit" onclick="scrollSec(event,'sec-profile-visit')">上门画像</a>
+                <a href="#sec-profile-deal" onclick="scrollSec(event,'sec-profile-deal')">成交画像</a>
+            </div>
+        </div>
+    </nav>
+    <div class="sidebar-footer" id="dataInfo">加载中...</div>
+</aside>
+<main class="main">
+    <div class="main-header">
+        <h2 class="page-title">法律推广数据看板</h2>
+        <div class="upload-area">
+            <div class="upload-group">
+                <span class="upload-group-label">线索数据</span>
+                <button class="upload-btn" id="btnLeads1" onclick="triggerUpload('Leads1')">在跟进</button>
+                <button class="upload-btn" id="btnLeads2" onclick="triggerUpload('Leads2')">7天未跟进</button>
+                <button class="upload-btn" id="btnLeads3" onclick="triggerUpload('Leads3')">无效</button>
+                <button class="upload-btn" id="btnLeads4" onclick="triggerUpload('Leads4')">终止</button>
+            </div>
+            <button class="upload-btn" id="btnPromo" onclick="triggerUpload('Promo')">上传推广日报</button>
+            <button class="upload-btn" id="btnCalls" onclick="triggerUpload('Calls')">上传通话流水</button>
+            <button class="upload-btn clear-btn" onclick="clearAllData()">清空数据</button>
+            <button class="upload-btn export-all-btn" onclick="exportAllReports()">📥 下载全部报表</button>
+        </div>
+    </div>
+    <div id="lastSync" class="last-sync">尚未上传数据</div>
+    <div class="topbar">
+        <div class="topbar-row">
+            <div class="date-filter-bar">
+                <span class="filter-label">快捷筛选</span>
+                <button class="quick-btn" onclick="setRange('today', this)">今天</button>
+                <button class="quick-btn" onclick="setRange('week', this)">本周</button>
+                <button class="quick-btn" onclick="setRange('month', this)">本月</button>
+                <button class="quick-btn active" onclick="setRange('lastmonth', this)">上月</button>
+                <button class="quick-btn" onclick="setRange('all', this)">全部</button>
+                <span class="filter-label" style="margin-left:6px;">自定义</span>
+                <div class="date-inputs">
+                    <input type="date" id="startDate">
+                    <span>至</span>
+                    <input type="date" id="endDate">
+                    <button class="quick-btn" onclick="applyCustomRange()">应用</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="fileLeads1" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'leads1')">
+    <input type="file" id="fileLeads2" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'leads2')">
+    <input type="file" id="fileLeads3" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'leads3')">
+    <input type="file" id="fileLeads4" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'leads4')">
+    <input type="file" id="filePromo" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'promo')">
+    <input type="file" id="fileCalls" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'calls')">
+    <div id="tab0" class="tab-content active">
+        <div class="section">
+            <div class="subsection" id="sec-overview">
+                <h3 class="subsection-title">综合数据<button class="export-btn" onclick="exportSection('overview')">📥 下载 Excel</button></h3>
+                <p style="font-size:12px;color:var(--text-3);margin:-6px 0 12px;" id="overviewHint">本期 vs 上一周期环比。消费来自推广日报，成本 = 消费 ÷ 对应数量。</p>
+                <table id="overviewTable"></table>
+            </div>
+            <div class="subsection" id="sec-sales">
+                <h3 class="subsection-title">销售成交数据分析<button class="export-btn" onclick="exportSection('sales')">📥 下载 Excel</button></h3>
+                <table id="salesTable"></table>
+            </div>
+            <div class="subsection" id="sec-channel">
+                <h3 class="subsection-title">分渠道数据分析<button class="export-btn" onclick="exportSection('channel')">📥 下载 Excel</button></h3>
+                <table id="channelTable"></table>
+            </div>
+            <div class="subsection" id="sec-history">
+                <h3 class="subsection-title">历史线索成交<button class="export-btn" onclick="exportSection('history')">📥 下载 Excel</button></h3>
+                <table id="historyTable"></table>
+                <h4 style="font-size:13px;color:var(--text);margin:20px 0 12px;font-weight:600;">成交线索明细</h4>
+                <table id="historyDetailTable"></table>
+            </div>
+        </div>
+    </div>
+    <div id="tab1" class="tab-content">
+        <div class="section">
+            <div class="subsection" id="sec-amount">
+                <h3 class="subsection-title">案源结构——标的额<button class="export-btn" onclick="exportSection('amount')">📥 下载 Excel</button></h3>
+                <table id="amountTable"></table>
+            </div>
+            <div class="subsection" id="sec-casetype">
+                <h3 class="subsection-title">案源结构——案件类型<button class="export-btn" onclick="exportSection('caseType')">📥 下载 Excel</button></h3>
+                <table id="caseTypeTable"></table>
+            </div>
+        </div>
+    </div>
+    <div id="tab2" class="tab-content">
+        <div class="section">
+            <div class="subsection" id="sec-behavior">
+                <h3 class="subsection-title">销售-跟进行为数据分析<button class="export-btn" onclick="exportSection('behavior')">📥 下载 Excel</button></h3>
+                <table id="behaviorTable"></table>
+            </div>
+            <div class="subsection" id="sec-hourly">
+                <h3 class="subsection-title">各负责人时段拨打次数 &amp; 接通率<button class="export-btn" onclick="exportSection('hourly')">📥 下载 Excel</button></h3>
+                <div id="hourlyChartWrap"></div>
+            </div>
+            <div class="subsection" id="sec-sales-amount">
+                <h3 class="subsection-title">销售-标的额跟进数据分析<button class="export-btn" onclick="exportSection('salesAmount')">📥 下载 Excel</button></h3>
+                <table id="salesAmountTable"></table>
+            </div>
+            <div class="subsection" id="sec-sales-case">
+                <h3 class="subsection-title">销售-案件类型跟进数据分析<button class="export-btn" onclick="exportSection('salesCase')">📥 下载 Excel</button></h3>
+                <table id="salesCaseTable"></table>
+            </div>
+        </div>
+    </div>
+    <div id="tab3" class="tab-content">
+        <div class="section">
+            <div class="subsection" id="sec-promo">
+                <h3 class="subsection-title">推广渠道汇总<button class="export-btn" onclick="exportSection('promo')">📥 下载 Excel</button></h3>
+                <table id="promoChannelTable"></table>
+            </div>
+        </div>
+    </div>
+    <div id="tab4" class="tab-content">
+        <div class="section">
+            <div class="subsection" id="sec-large-amount">
+                <h3 class="subsection-title">大额标的数据情况（标的额 10 万以上）<button class="export-btn" onclick="exportSection('largeAmount')">📥 下载 Excel</button></h3>
+                <p style="font-size:12px;color:var(--text-3);margin:-6px 0 12px;">按「负责人 → 标的额 → 案件类型」展示 10 万以上标的的线索分配与转化情况。</p>
+                <table id="largeAmountTable"></table>
+            </div>
+            <div class="subsection" id="sec-large-detail">
+                <h3 class="subsection-title">大额标的线索详情<button class="export-btn" onclick="exportSection('largeDetail')">📥 下载 Excel</button></h3>
+                <p style="font-size:12px;color:var(--text-3);margin:-6px 0 12px;">按线索时间倒序排列。点击任意线索的「📋 查看全部字段」可一键展开该线索在原始表中的所有字段。</p>
+                <div class="profile-filter-bar" style="margin-bottom:14px;">
+                    <span class="filter-label">表内筛选</span>
+                    <div class="ms" id="ldOwner" data-label="负责人">
+                        <button type="button" class="ms-btn" onclick="toggleMs('ldOwner')"><span class="ms-label">全部负责人</span><span class="ms-arrow">▾</span></button>
+                        <div class="ms-panel"></div>
+                    </div>
+                    <div class="ms" id="ldStatus" data-label="跟进状态">
+                        <button type="button" class="ms-btn" onclick="toggleMs('ldStatus')"><span class="ms-label">全部跟进状态</span><span class="ms-arrow">▾</span></button>
+                        <div class="ms-panel"></div>
+                    </div>
+                    <div class="ms" id="ldVisit" data-label="是否上门">
+                        <button type="button" class="ms-btn" onclick="toggleMs('ldVisit')"><span class="ms-label">全部是否上门</span><span class="ms-arrow">▾</span></button>
+                        <div class="ms-panel"></div>
+                    </div>
+                    <button class="quick-btn" onclick="resetLargeDetailFilter()">重置</button>
+                    <span id="ldCount" class="filter-label" style="margin-left:auto;"></span>
+                </div>
+                <table id="largeDetailTable"></table>
+            </div>
+        </div>
+    </div>
+    <div id="tab5" class="tab-content">
+        <div class="section">
+            <div class="subsection" id="sec-small-deal">
+                <h3 class="subsection-title">小额成交汇总（合同金额 1000 以下）<button class="export-btn" onclick="exportSection('smallDeal')">📥 下载 Excel</button></h3>
+                <p style="font-size:12px;color:var(--text-3);margin:-6px 0 12px;">统计当期各销售成交的合同金额低于 1000 元的小额订单：成交数、合同额、已收费用、客单价。</p>
+                <table id="smallDealTable"></table>
+            </div>
+            <div class="subsection" id="sec-small-detail">
+                <h3 class="subsection-title">小额成交线索详情<button class="export-btn" onclick="exportSection('smallDetail')">📥 下载 Excel</button></h3>
+                <p style="font-size:12px;color:var(--text-3);margin:-6px 0 12px;">当期所有小额成交线索明细，按成交时间倒序排列。点击上方汇总表中的销售姓名可仅查看该销售的成交明细。点击「📋 查看全部字段」可展开该线索原始表中的全部字段。</p>
+                <div class="profile-filter-bar" style="margin-bottom:14px;" id="smallDetailFilterBar">
+                    <span id="smallDetailFilterTip" class="filter-label">未筛选 · 可点击上方销售姓名进行筛选</span>
+                    <button class="quick-btn" id="smallDetailResetBtn" onclick="clearSmallSalesFilter()" style="display:none;">清除筛选</button>
+                    <span id="smallDetailCount" class="filter-label" style="margin-left:auto;"></span>
+                </div>
+                <table id="smallDetailTable"></table>
+            </div>
+        </div>
+    </div>
+    <div id="tab6" class="tab-content">
+        <div class="section">
+            <div class="profile-filter-bar">
+                <span class="filter-label">维度筛选</span>
+                <select id="profileSource" onchange="renderProfiles(filteredLeads())"><option value="">全部来源</option></select>
+                <select id="profileCaseType" onchange="renderProfiles(filteredLeads())"><option value="">全部案件类型</option></select>
+                <select id="profileAmount" onchange="renderProfiles(filteredLeads())"><option value="">全部标的额</option></select>
+                <select id="profileContract" onchange="renderProfiles(filteredLeads())">
+                    <option value="">全部合同金额</option>
+                    <option value="0-1000">0-1000</option>
+                    <option value="1000-3000">1000-3000</option>
+                    <option value="3000-6000">3000-6000</option>
+                    <option value="6000-10000">6000-10000</option>
+                    <option value="10000-30000">10000-30000</option>
+                    <option value="30000+">3万以上</option>
+                </select>
+                <button class="quick-btn" onclick="resetProfileFilters()">重置</button>
+            </div>            <div class="subsection" id="sec-profile-leads">
+                <h3 class="subsection-title">线索画像分析<button class="export-btn" onclick="exportSection('profileLeads')">📥 下载 Excel</button></h3>
+                <div class="pie-chart-group" id="profileLeads"></div>
+            </div>
+            <div class="subsection" id="sec-profile-visit">
+                <h3 class="subsection-title">上门画像分析<button class="export-btn" onclick="exportSection('profileVisit')">📥 下载 Excel</button></h3>
+                <div class="pie-chart-group" id="profileVisit"></div>
+            </div>
+            <div class="subsection" id="sec-profile-deal">
+                <h3 class="subsection-title">成交画像分析<button class="export-btn" onclick="exportSection('profileDeal')">📥 下载 Excel</button></h3>
+                <div class="pie-chart-group" id="profileDeal"></div>
+            </div>
+        </div>
+    </div>
+</main>
+<div id="leadDetailModal" class="modal-mask" onclick="closeLeadDetail(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-head">
+            <span id="leadDetailTitle">线索全部字段</span>
+            <button class="modal-close" onclick="closeLeadDetail()">✕</button>
+        </div>
+        <div class="modal-body" id="leadDetailBody"></div>
+    </div>
+</div>
+<script>
+// ===== IndexedDB 持久化层 =====
+const DB_NAME = 'legal-dashboard';
+const DB_VERSION = 1;
+const STORE = 'datasets';
+
+function openDB() {
+    return new Promise(function(resolve, reject) {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = function(e) {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+        };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ reject(req.error); };
+    });
+}
+
+function dbPut(key, value) {
+    return openDB().then(function(db) {
+        return new Promise(function(resolve, reject) {
+            const tx = db.transaction(STORE, 'readwrite');
+            tx.objectStore(STORE).put(value, key);
+            tx.oncomplete = function(){ resolve(); };
+            tx.onerror = function(){ reject(tx.error); };
+        });
+    });
+}
+
+function dbGet(key) {
+    return openDB().then(function(db) {
+        return new Promise(function(resolve, reject) {
+            const tx = db.transaction(STORE, 'readonly');
+            const req = tx.objectStore(STORE).get(key);
+            req.onsuccess = function(){ resolve(req.result); };
+            req.onerror = function(){ reject(req.error); };
+        });
+    });
+}
+
+function dbClear() {
+    return openDB().then(function(db) {
+        return new Promise(function(resolve, reject) {
+            const tx = db.transaction(STORE, 'readwrite');
+            tx.objectStore(STORE).clear();
+            tx.oncomplete = function(){ resolve(); };
+            tx.onerror = function(){ reject(tx.error); };
+        });
+    });
+}
+
+// ===== Data state =====
+let leadsData = [];
+let leadsSlots = { leads1: [], leads2: [], leads3: [], leads4: [] };
+let callsData = [];
+let promoData = [];
+let filterStart = '';
+let filterEnd = '';
+
+// ===== Date filter helpers =====
+function toDateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function setRange(type, btn) {
+    const today = new Date();
+    let start, end;
+    if (type === 'today') {
+        start = end = toDateStr(today);
+    } else if (type === 'week') {
+        const day = today.getDay() || 7;
+        const mon = new Date(today); mon.setDate(today.getDate() - day + 1);
+        start = toDateStr(mon); end = toDateStr(today);
+    } else if (type === 'month') {
+        start = toDateStr(new Date(today.getFullYear(), today.getMonth(), 1));
+        end = toDateStr(today);
+    } else if (type === 'lastmonth') {
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+        start = toDateStr(lastMonth); end = toDateStr(lastMonthEnd);
+    } else {
+        start = ''; end = '';
+    }
+    filterStart = start; filterEnd = end;
+    document.getElementById('startDate').value = start;
+    document.getElementById('endDate').value = end;
+    document.querySelectorAll('.date-filter-bar .quick-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderDashboard();
+}
+
+function applyCustomRange() {
+    filterStart = document.getElementById('startDate').value;
+    filterEnd = document.getElementById('endDate').value;
+    document.querySelectorAll('.date-filter-bar .quick-btn').forEach(b => b.classList.remove('active'));
+    renderDashboard();
+}
+function inRange(dateStr) {
+    if (!filterStart && !filterEnd) return true;
+    const d = String(dateStr || '').substring(0, 10);
+    if (!d) return false;
+    if (filterStart && d < filterStart) return false;
+    if (filterEnd && d > filterEnd) return false;
+    return true;
+}
+function filteredLeads() {
+    return leadsData.filter(function(l) {
+        return inRange(toDateOnly(l['线索来源时间']))
+            || inRange(toDateOnly(l['上门时间']))
+            || inRange(toDateOnly(l['成交时间']));
+    });
+}
+function filteredCalls() { return callsData.filter(c => inRange(toDateOnly(c['通话时间']))); }
+function filteredPromo() { return promoData.filter(p => inRange(toDateOnly(p['日期']))); }
+
+// ===== Upload handlers =====
+function triggerUpload(type) { document.getElementById('file' + type).click(); }
+
+function handleUpload(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const wb = XLSX.read(e.target.result, {type: 'binary', cellDates: true});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {defval: ''});
+        if (type === 'leads1' || type === 'leads2' || type === 'leads3' || type === 'leads4') {
+            leadsSlots[type] = rows;
+            leadsData = [].concat(leadsSlots.leads1, leadsSlots.leads2, leadsSlots.leads3, leadsSlots.leads4);
+            const btnMap = { leads1: 'btnLeads1', leads2: 'btnLeads2', leads3: 'btnLeads3', leads4: 'btnLeads4' };
+            const labelMap = { leads1: '在跟进 ✓', leads2: '7天未跟进 ✓', leads3: '无效 ✓', leads4: '终止 ✓' };
+            const btn = document.getElementById(btnMap[type]);
+            btn.classList.add('success'); btn.textContent = labelMap[type];
+            dbPut(type, rows);
+        } else if (type === 'promo') {
+            promoData = rows;
+            document.getElementById('btnPromo').classList.add('success');
+            document.getElementById('btnPromo').textContent = '推广日报 ✓';
+            dbPut('promo', rows);
+        } else {
+            callsData = rows;
+            document.getElementById('btnCalls').classList.add('success');
+            document.getElementById('btnCalls').textContent = '通话流水 ✓';
+            dbPut('calls', rows);
+        }
+        dbPut('updatedAt', new Date().toISOString());
+        renderDashboard();
+        updateLastSync();
+    };
+    reader.readAsBinaryString(file);
+    event.target.value = '';
+}
+
+// ===== Tab switch & secondary nav =====
+function switchTab(index, btn) {
+    document.querySelectorAll('.tab-content').forEach((t, i) => t.classList.toggle('active', i === index));
+    document.querySelectorAll('.nav-group').forEach((g, i) => g.classList.toggle('active', i === index));
+    document.querySelectorAll('.nav-l1').forEach((b, i) => b.classList.toggle('active', i === index));
+}
+function scrollSec(e, id) {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+// ===== Utility =====
+function getOwner(l) {
+    return (l['负责人'] || l['前负责人'] || '').trim() || '未分配';
+}
+function toDateOnly(v) {
+    if (!v) return '';
+    if (v instanceof Date) return toDateStr(v);
+    var s = String(v).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+    if (/^\d{4}\/\d{2}\/\d{2}/.test(s)) return s.substring(0, 10).replace(/\//g, '-');
+    var n = parseFloat(s);
+    if (!isNaN(n) && n > 30000 && n < 70000) {
+        var d = new Date((n - 25569) * 86400000);
+        return toDateStr(d);
+    }
+    var parsed = new Date(s);
+    if (!isNaN(parsed.getTime())) return toDateStr(parsed);
+    return '';
+}
+function numVal(v) {
+    if (v === '' || v === null || v === undefined) return 0;
+    const n = parseFloat(String(v).replace(/,/g, ''));
+    return isNaN(n) ? 0 : n;
+}
+function fmt(v) { return numVal(v).toFixed(2); }
+function pct(a, b) { return b > 0 ? (a / b * 100).toFixed(1) + '%' : '0.0%'; }
+function normalizePhone(p) { return String(p).replace(/\.0+$/, '').trim(); }
+
+// ===== Main render =====
+function renderDashboard() {
+    const leads = filteredLeads();
+    const calls = filteredCalls();
+    const promo = filteredPromo();
+
+    const rangeLabel = filterStart && filterEnd ? filterStart + ' 至 ' + filterEnd
+        : filterStart ? filterStart + ' 至今'
+        : filterEnd ? '至 ' + filterEnd
+        : '全部数据';
+
+    document.getElementById('dataInfo').innerHTML =
+        '筛选范围<br><b style="color:#3d6ef5;">' + rangeLabel + '</b><br>'
+        + '线索 ' + leads.length + ' 条 · 通话 ' + calls.length + ' 条 · 推广 ' + promo.length + ' 条';
+
+    renderOverview();
+    renderSales(leads);
+    renderChannel(leads);
+    renderHistory(leads);
+    renderAmount(leads);
+    renderCaseType(leads);
+    renderBehavior(leads, calls);
+    renderHourlyChart(calls);
+    renderSalesAmount(leads, calls);
+    renderSalesCase(leads, calls);
+    renderPromoChannel(promo);
+    renderProfiles(leads);
+    renderLargeAmount(leads);
+    renderLargeDetail(leads);
+    renderSmallDeal(leads);
+    renderSmallDetail(leads);
+}
+
+// ===== Tab 0: 综合数据（本期 / 上期 / 环比）=====
+// 判断 [start,end] 是否为某个完整自然月
+function isFullMonth(start, end) {
+    if (!start || !end) return false;
+    var s = new Date(start), e = new Date(end);
+    if (s.getDate() !== 1) return false;
+    var lastDay = new Date(e.getFullYear(), e.getMonth() + 1, 0).getDate();
+    return e.getDate() === lastDay && s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear();
+}
+// 计算上一周期：整月→上个自然月；否则→等长度紧邻前段
+function prevPeriod(start, end) {
+    if (!start || !end) return null;
+    if (isFullMonth(start, end)) {
+        var s = new Date(start);
+        var pStart = new Date(s.getFullYear(), s.getMonth() - 1, 1);
+        var pEnd = new Date(s.getFullYear(), s.getMonth(), 0);
+        return { start: toDateStr(pStart), end: toDateStr(pEnd) };
+    }
+    var sd = new Date(start), ed = new Date(end);
+    var days = Math.round((ed - sd) / 86400000) + 1;
+    var pEnd = new Date(sd); pEnd.setDate(pEnd.getDate() - 1);
+    var pStart = new Date(pEnd); pStart.setDate(pStart.getDate() - (days - 1));
+    return { start: toDateStr(pStart), end: toDateStr(pEnd) };
+}
+// 某日期是否落在 [start,end]（含端点；空区间视为全部）
+function inSpan(dateStr, start, end) {
+    var d = String(dateStr || '').substring(0, 10);
+    if (!d) return false;
+    if (start && d < start) return false;
+    if (end && d > end) return false;
+    return true;
+}
+// 在给定区间内汇总线索指标 + 推广消费（口径对齐 renderSales，排除人资部）
+function overviewStats(start, end) {
+    var s = { leads:0, ab:0, visited:0, deal:0, contract:0, received:0, cost:0 };
+    leadsData.forEach(function(l) {
+        if (getOwner(l) === '人资部') return;
+        if (inSpan(toDateOnly(l['线索来源时间']), start, end)) {
+            s.leads++;
+            var q = l['线索质量'] || '';
+            if (q === 'A' || q === 'B') s.ab++;
+        }
+        if (l['上门时间'] && inSpan(toDateOnly(l['上门时间']), start, end)) s.visited++;
+        if (l['成交时间'] && inSpan(toDateOnly(l['成交时间']), start, end)) {
+            if (numVal(l['合同金额']) >= 1000) s.deal++;
+            s.contract += numVal(l['合同金额']);
+            s.received += numVal(l['实收金额']);
+        }
+    });
+    promoData.forEach(function(p) {
+        if (String(p['渠道'] || '').trim() === '汇总') return;
+        if (inSpan(toDateOnly(p['日期']), start, end)) s.cost += numVal(p['消费']);
+    });
+    return s;
+}
+
+// 由原始汇总派生出展示用的全部字段
+function overviewDerive(s) {
+    return {
+        leads: s.leads,
+        ab: s.ab,
+        abPct: s.leads > 0 ? s.ab / s.leads * 100 : 0,
+        visited: s.visited,
+        deal: s.deal,
+        visitPct: s.leads > 0 ? s.visited / s.leads * 100 : 0,
+        dealPct: s.visited > 0 ? s.deal / s.visited * 100 : 0,
+        contract: s.contract,
+        received: s.received,
+        avgPrice: s.deal > 0 ? s.contract / s.deal : 0,
+        cost: s.cost,
+        costPerLead: s.leads > 0 ? s.cost / s.leads : 0,
+        costPerVisit: s.visited > 0 ? s.cost / s.visited : 0,
+        costPerDeal: s.deal > 0 ? s.cost / s.deal : 0
+    };
+}
+
+// 综合数据列定义：key、表头、数值格式、是否“越低越好”（成本类）
+var OVERVIEW_COLS = [
+    { k:'leads',        h:'商机数',   t:'int' },
+    { k:'ab',           h:'AB商机数', t:'int' },
+    { k:'abPct',        h:'AB占比',   t:'pct' },
+    { k:'visited',      h:'上门',     t:'int' },
+    { k:'deal',         h:'成交',     t:'int' },
+    { k:'visitPct',     h:'上门率',   t:'pct' },
+    { k:'dealPct',      h:'成交率',   t:'pct' },
+    { k:'contract',     h:'合同额',   t:'money' },
+    { k:'received',     h:'已收费用', t:'money' },
+    { k:'avgPrice',     h:'客单价',   t:'money' },
+    { k:'cost',         h:'消费',     t:'money' },
+    { k:'costPerLead',  h:'商机成本', t:'money', lowerBetter:true },
+    { k:'costPerVisit', h:'上门成本', t:'money', lowerBetter:true },
+    { k:'costPerDeal',  h:'成交成本', t:'money', lowerBetter:true }
+];
+function ovFmt(v, t) {
+    if (t === 'int') return String(v);
+    if (t === 'pct') return v.toFixed(1) + '%';
+    return numVal(v).toFixed(2);
+}
+// 环比：百分点差（占比类）或百分比变化（其余）
+function ovDelta(cur, prev, col) {
+    if (col.t === 'pct') {
+        var diff = cur - prev;
+        var arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—';
+        var good = diff > 0;
+        return { text: (diff > 0 ? '+' : '') + diff.toFixed(1) + 'pp ' + arrow, good: diff === 0 ? null : good };
+    }
+    if (prev === 0) {
+        if (cur === 0) return { text: '—', good: null };
+        return { text: '新增', good: !col.lowerBetter };
+    }
+    var rate = (cur - prev) / prev * 100;
+    var arrow = rate > 0 ? '▲' : rate < 0 ? '▼' : '—';
+    var rising = rate > 0;
+    var good = col.lowerBetter ? !rising : rising; // 成本上升=变差
+    return { text: (rate > 0 ? '+' : '') + rate.toFixed(1) + '% ' + arrow, good: rate === 0 ? null : good };
+}
+
+function renderOverview() {
+    var cur = overviewDerive(overviewStats(filterStart, filterEnd));
+    var pp = prevPeriod(filterStart, filterEnd);
+    var prev = pp ? overviewDerive(overviewStats(pp.start, pp.end)) : null;
+
+    var curLabel = filterStart && filterEnd ? (filterStart + ' ~ ' + filterEnd) : '全部数据';
+    var prevLabel = pp ? (pp.start + ' ~ ' + pp.end) : '—';
+    var hint = document.getElementById('overviewHint');
+    if (hint) {
+        hint.innerHTML = '本期 <b style="color:var(--primary);">' + curLabel + '</b>'
+            + '，上一周期 <b style="color:var(--text-2);">' + prevLabel + '</b>'
+            + (isFullMonth(filterStart, filterEnd) ? '（整月，上期取上个自然月）' : (pp ? '（等长度紧邻前段）' : ''))
+            + '。消费来自推广日报；成本 = 消费 ÷ 对应数量。';
+    }
+
+    var head = '<tr><th style="text-align:left;">指标周期</th>';
+    OVERVIEW_COLS.forEach(function(c){ head += '<th>' + c.h + '</th>'; });
+    head += '</tr>';
+
+    function dataRow(label, d, cls) {
+        var r = '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td style="text-align:left;font-weight:600;">' + label + '</td>';
+        OVERVIEW_COLS.forEach(function(c){ r += '<td>' + ovFmt(d[c.k], c.t) + '</td>'; });
+        return r + '</tr>';
+    }
+
+    var html = head + dataRow('本期', cur, 'sub-total-row');
+    if (prev) {
+        html += dataRow('上一周期', prev);
+        var dr = '<tr class="total-row"><td style="text-align:left;font-weight:700;">环比</td>';
+        OVERVIEW_COLS.forEach(function(c) {
+            var del = ovDelta(cur[c.k], prev[c.k], c);
+            var color = del.good === null ? 'var(--text-3)' : (del.good ? 'var(--success)' : 'var(--danger)');
+            dr += '<td style="color:' + color + ';font-weight:700;">' + del.text + '</td>';
+        });
+        dr += '</tr>';
+        html += dr;
+    } else {
+        html += '<tr><td style="text-align:left;color:var(--text-3);" colspan="' + (OVERVIEW_COLS.length + 1) + '">未设置时间范围，无法计算上一周期环比</td></tr>';
+    }
+    document.getElementById('overviewTable').innerHTML = html;
+}
+
+// ===== Tab 0: 销售成交数据分析 =====
+function renderSales(leads) {
+    const stats = {};
+    leads.forEach(function(l) {
+        const sales = getOwner(l);
+        if (sales === '人资部') return;
+        if (!stats[sales]) stats[sales] = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+        const s = stats[sales];
+        if (inRange(toDateOnly(l['线索来源时间']))) {
+            s.leads++;
+            const q = l['线索质量'] || '';
+            if (q === 'A' || q === 'B') s.ab++;
+        }
+        if (l['上门时间'] && inRange(toDateOnly(l['上门时间']))) s.visited++;
+        if (l['成交时间'] && inRange(toDateOnly(l['成交时间']))) {
+            if (numVal(l['合同金额']) >= 1000) s.deal++;
+            s.contract += numVal(l['合同金额']);
+            s.received += numVal(l['实收金额']);
+        }
+    });
+    const arr = Object.entries(stats).sort(function(a,b){ return b[1].leads - a[1].leads; });
+    const tot = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+    arr.forEach(function(x){ const s=x[1]; tot.leads+=s.leads; tot.ab+=s.ab; tot.visited+=s.visited; tot.deal+=s.deal; tot.contract+=s.contract; tot.received+=s.received; });
+
+    let html = '<tr><th>销售</th><th>商机数</th><th>AB商机数</th><th>AB占比</th><th>上门</th><th>成交</th><th>上门率</th><th>成交率</th><th>合同额</th><th>已收费用</th><th>客单价</th></tr>';
+    arr.forEach(function(x) {
+        const name=x[0]; const s=x[1];
+        html += '<tr><td>' + name + '</td><td>' + s.leads + '</td><td>' + s.ab + '</td><td>' + pct(s.ab,s.leads) + '</td><td>' + s.visited + '</td><td>' + s.deal + '</td><td>' + pct(s.visited,s.leads) + '</td><td>' + pct(s.deal,s.visited) + '</td><td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td><td>' + (s.deal>0?(s.contract/s.deal).toFixed(2):'0.00') + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td>合计</td><td>' + tot.leads + '</td><td>' + tot.ab + '</td><td>' + pct(tot.ab,tot.leads) + '</td><td>' + tot.visited + '</td><td>' + tot.deal + '</td><td>' + pct(tot.visited,tot.leads) + '</td><td>' + pct(tot.deal,tot.visited) + '</td><td>' + fmt(tot.contract) + '</td><td>' + fmt(tot.received) + '</td><td>' + (tot.deal>0?(tot.contract/tot.deal).toFixed(2):'0.00') + '</td></tr>';
+    document.getElementById('salesTable').innerHTML = html;
+}
+
+// ===== Tab 0: 分渠道数据分析 =====
+function renderChannel(leads) {
+    const stats = {};
+    leads.forEach(function(l) {
+        const src = l['线索来源'] || '空白';
+        if (!stats[src]) stats[src] = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+        const s = stats[src];
+        if (inRange(toDateOnly(l['线索来源时间']))) {
+            s.leads++;
+            const q = l['线索质量'] || '';
+            if (q === 'A' || q === 'B') s.ab++;
+        }
+        if (l['上门时间'] && inRange(toDateOnly(l['上门时间']))) s.visited++;
+        if (l['成交时间'] && inRange(toDateOnly(l['成交时间']))) {
+            if (numVal(l['合同金额']) >= 1000) s.deal++;
+            s.contract += numVal(l['合同金额']);
+            s.received += numVal(l['实收金额']);
+        }
+    });
+    const arr = Object.entries(stats).sort(function(a,b){ return b[1].leads - a[1].leads; });
+    const tot = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+    arr.forEach(function(x){ const s=x[1]; tot.leads+=s.leads; tot.ab+=s.ab; tot.visited+=s.visited; tot.deal+=s.deal; tot.contract+=s.contract; tot.received+=s.received; });
+
+    let html = '<tr><th>渠道</th><th>商机数</th><th>AB商机量</th><th>AB占比</th><th>上门</th><th>上门率</th><th>成交</th><th>成交率</th><th>合同额</th><th>已收费用</th></tr>';
+    arr.forEach(function(x) {
+        const name=x[0]; const s=x[1];
+        html += '<tr><td>' + name + '</td><td>' + s.leads + '</td><td>' + s.ab + '</td><td>' + pct(s.ab,s.leads) + '</td><td>' + s.visited + '</td><td>' + pct(s.visited,s.leads) + '</td><td>' + s.deal + '</td><td>' + pct(s.deal,s.visited) + '</td><td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td>合计</td><td>' + tot.leads + '</td><td>' + tot.ab + '</td><td>' + pct(tot.ab,tot.leads) + '</td><td>' + tot.visited + '</td><td>' + pct(tot.visited,tot.leads) + '</td><td>' + tot.deal + '</td><td>' + pct(tot.deal,tot.visited) + '</td><td>' + fmt(tot.contract) + '</td><td>' + fmt(tot.received) + '</td></tr>';
+    document.getElementById('channelTable').innerHTML = html;
+}
+
+// ===== Tab 0: 历史线索成交 =====
+function renderHistory(leads) {
+    var historyLeads = leadsData.filter(function(l) {
+        var srcDate = toDateOnly(l['线索来源时间']);
+        var dealDate = toDateOnly(l['成交时间']);
+        if (!srcDate || !dealDate) return false;
+        if (filterStart && srcDate >= filterStart) return false;
+        return inRange(dealDate);
+    });
+
+    var stats = {};
+    historyLeads.forEach(function(l) {
+        var sales = getOwner(l);
+        if (sales === '人资部') return;
+        if (!stats[sales]) stats[sales] = {deal:0, contract:0, received:0};
+        var s = stats[sales];
+        if (numVal(l['合同金额']) >= 1000) s.deal++;
+        s.contract += numVal(l['合同金额']);
+        s.received += numVal(l['实收金额']);
+    });
+
+    var arr = Object.entries(stats).sort(function(a,b){ return b[1].contract - a[1].contract; });
+    var tot = {deal:0, contract:0, received:0};
+    arr.forEach(function(x){ var s=x[1]; tot.deal+=s.deal; tot.contract+=s.contract; tot.received+=s.received; });
+
+    var html = '<tr><th>销售</th><th>成交数</th><th>合同额</th><th>已收费用</th><th>客单价</th></tr>';
+    arr.forEach(function(x) {
+        var name=x[0], s=x[1];
+        html += '<tr><td>' + name + '</td><td>' + s.deal + '</td><td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td><td>' + (s.deal>0?(s.contract/s.deal).toFixed(2):'0.00') + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td>合计</td><td>' + tot.deal + '</td><td>' + fmt(tot.contract) + '</td><td>' + fmt(tot.received) + '</td><td>' + (tot.deal>0?(tot.contract/tot.deal).toFixed(2):'0.00') + '</td></tr>';
+    document.getElementById('historyTable').innerHTML = html;
+
+    var detail = '<tr><th>销售</th><th>线索来源</th><th>案件类型</th><th>标的额</th><th>线索时间</th><th>成交时间</th><th>合同额</th><th>已收费用</th></tr>';
+    historyLeads.filter(function(l){ return getOwner(l) !== '人资部'; })
+        .sort(function(a,b){ return toDateOnly(b['成交时间']).localeCompare(toDateOnly(a['成交时间'])); })
+        .forEach(function(l) {
+            detail += '<tr><td>' + getOwner(l) + '</td><td>' + (l['线索来源']||'') + '</td><td>' + (l['案件类型1']||'') + '</td><td>' + (l['标的额']||'') + '</td><td>' + toDateOnly(l['线索来源时间']) + '</td><td>' + toDateOnly(l['成交时间']) + '</td><td>' + fmt(numVal(l['合同金额'])) + '</td><td>' + fmt(numVal(l['实收金额'])) + '</td></tr>';
+        });
+    document.getElementById('historyDetailTable').innerHTML = detail;
+}
+
+// ===== Tab 1: 案源结构——标的额 =====
+function renderAmount(leads) {
+    const stats = {};
+    leads.forEach(function(l) {
+        const amt = l['标的额'] || '空白';
+        if (!stats[amt]) stats[amt] = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+        const s = stats[amt];
+        if (inRange(toDateOnly(l['线索来源时间']))) {
+            s.leads++;
+            const q = l['线索质量'] || '';
+            if (q === 'A' || q === 'B') s.ab++;
+        }
+        if (l['上门时间'] && inRange(toDateOnly(l['上门时间']))) s.visited++;
+        if (l['成交时间'] && inRange(toDateOnly(l['成交时间']))) {
+            if (numVal(l['合同金额']) >= 1000) s.deal++;
+            s.contract += numVal(l['合同金额']);
+            s.received += numVal(l['实收金额']);
+        }
+    });
+    const amountOrder = ['1万以下', '1-5万', '5-10万', '10-30万', '30万以上', '其他（不涉及标的额的）', '空白'];
+    const arr = Object.entries(stats).sort(function(a, b) {
+        var ai = amountOrder.indexOf(a[0]), bi = amountOrder.indexOf(b[0]);
+        if (ai === -1) ai = amountOrder.length;
+        if (bi === -1) bi = amountOrder.length;
+        return ai - bi;
+    });
+    const tot = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+    arr.forEach(function(x){ const s=x[1]; tot.leads+=s.leads; tot.ab+=s.ab; tot.visited+=s.visited; tot.deal+=s.deal; tot.contract+=s.contract; tot.received+=s.received; });
+
+    let html = '<tr><th>标的额</th><th>数量</th><th>AB商机量</th><th>AB占比</th><th>上门</th><th>上门率</th><th>成交</th><th>成交率</th><th>合同额</th><th>已收费用</th></tr>';
+    arr.forEach(function(x) {
+        const name=x[0]; const s=x[1];
+        html += '<tr><td>' + name + '</td><td>' + s.leads + '</td><td>' + s.ab + '</td><td>' + pct(s.ab,s.leads) + '</td><td>' + s.visited + '</td><td>' + pct(s.visited,s.leads) + '</td><td>' + s.deal + '</td><td>' + pct(s.deal,s.visited) + '</td><td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td>合计</td><td>' + tot.leads + '</td><td>' + tot.ab + '</td><td>' + pct(tot.ab,tot.leads) + '</td><td>' + tot.visited + '</td><td>' + pct(tot.visited,tot.leads) + '</td><td>' + tot.deal + '</td><td>' + pct(tot.deal,tot.visited) + '</td><td>' + fmt(tot.contract) + '</td><td>' + fmt(tot.received) + '</td></tr>';
+    document.getElementById('amountTable').innerHTML = html;
+}
+
+// ===== Tab 1: 案源结构——案件类型 =====
+function renderCaseType(leads) {
+    const stats = {};
+    leads.forEach(function(l) {
+        const ct = l['案件类型1'] || '空白';
+        if (!stats[ct]) stats[ct] = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+        const s = stats[ct];
+        if (inRange(toDateOnly(l['线索来源时间']))) {
+            s.leads++;
+            const q = l['线索质量'] || '';
+            if (q === 'A' || q === 'B') s.ab++;
+        }
+        if (l['上门时间'] && inRange(toDateOnly(l['上门时间']))) s.visited++;
+        if (l['成交时间'] && inRange(toDateOnly(l['成交时间']))) {
+            if (numVal(l['合同金额']) >= 1000) s.deal++;
+            s.contract += numVal(l['合同金额']);
+            s.received += numVal(l['实收金额']);
+        }
+    });
+    const arr = Object.entries(stats).sort(function(a,b){ return b[1].leads - a[1].leads; });
+    const tot = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+    arr.forEach(function(x){ const s=x[1]; tot.leads+=s.leads; tot.ab+=s.ab; tot.visited+=s.visited; tot.deal+=s.deal; tot.contract+=s.contract; tot.received+=s.received; });
+    let html = '<tr><th>案件类型</th><th>数量</th><th>AB商机量</th><th>AB占比</th><th>上门</th><th>上门率</th><th>成交</th><th>成交率</th><th>合同额</th><th>已收费用</th></tr>';
+    arr.forEach(function(x) {
+        const name=x[0]; const s=x[1];
+        html += '<tr><td>' + name + '</td><td>' + s.leads + '</td><td>' + s.ab + '</td><td>' + pct(s.ab,s.leads) + '</td><td>' + s.visited + '</td><td>' + pct(s.visited,s.leads) + '</td><td>' + s.deal + '</td><td>' + pct(s.deal,s.visited) + '</td><td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td>合计</td><td>' + tot.leads + '</td><td>' + tot.ab + '</td><td>' + pct(tot.ab,tot.leads) + '</td><td>' + tot.visited + '</td><td>' + pct(tot.visited,tot.leads) + '</td><td>' + tot.deal + '</td><td>' + pct(tot.deal,tot.visited) + '</td><td>' + fmt(tot.contract) + '</td><td>' + fmt(tot.received) + '</td></tr>';
+    document.getElementById('caseTypeTable').innerHTML = html;
+}
+
+// ===== Tab 2: 销售-跟进行为数据分析 =====
+function renderBehavior(leads, calls) {
+    const stats = {};
+    // 线索数：与表1商机数一致，按负责人分组，线索来源时间在范围内
+    leads.forEach(function(l) {
+        const sales = getOwner(l);
+        if (sales === '人资部') return;
+        if (!inRange(toDateOnly(l['线索来源时间']))) return;
+        if (!stats[sales]) stats[sales] = {leads:0, totalCalls:0, connected:0};
+        stats[sales].leads++;
+    });
+    // 通话次数/接通次数：通话时间在范围内的所有呼出，按主叫分组
+    calls.forEach(function(call) {
+        const sales = call['主叫'] || '';
+        if (!sales) return;
+        if (!stats[sales]) stats[sales] = {leads:0, totalCalls:0, connected:0};
+        stats[sales].totalCalls++;
+        if (call['接通状态'] === '接通') stats[sales].connected++;
+    });
+    const arr = Object.entries(stats).sort(function(a,b){ return b[1].leads - a[1].leads; });
+    const tot = {leads:0, totalCalls:0, connected:0};
+    arr.forEach(function(x){ const s=x[1]; tot.leads+=s.leads; tot.totalCalls+=s.totalCalls; tot.connected+=s.connected; });
+
+    let html = '<tr><th>销售</th><th>线索数</th><th>通话次数</th><th>接通次数</th><th>接通率</th><th>平均拨打次数</th><th>平均接通次数</th></tr>';
+    arr.forEach(function(x) {
+        const name=x[0]; const s=x[1];
+        const lc = s.leads;
+        html += '<tr><td>' + name + '</td><td>' + lc + '</td><td>' + s.totalCalls + '</td><td>' + s.connected + '</td><td>' + pct(s.connected, s.totalCalls) + '</td><td>' + (lc>0?(s.totalCalls/lc).toFixed(1):'0.0') + '</td><td>' + (lc>0?(s.connected/lc).toFixed(1):'0.0') + '</td></tr>';
+    });
+    html += '<tr class="total-row"><td>合计</td><td>' + tot.leads + '</td><td>' + tot.totalCalls + '</td><td>' + tot.connected + '</td><td>' + pct(tot.connected, tot.totalCalls) + '</td><td>' + (tot.leads>0?(tot.totalCalls/tot.leads).toFixed(1):'0.0') + '</td><td>' + (tot.leads>0?(tot.connected/tot.leads).toFixed(1):'0.0') + '</td></tr>';
+    document.getElementById('behaviorTable').innerHTML = html;
+}
+// ===== Tab 2: 各负责人时段拨打次数 & 接通率（深色科技风配色）=====
+function renderHourlyChart(calls) {
+    const hours = [9,10,11,12,13,14,15,16,17,18,19,20];
+    const owners = ['张莉','孟珊珊','谈记平','王雅欣'];
+    const lineColors = ['#3d6ef5','#f59e0b','#10b981','#ef4444'];
+    const gridColor = '#eef1f6';
+    const axisColor = '#9aa4b4';
+    const labelColor = '#6b7688';
+
+    const ownerHourly = {};
+    owners.forEach(function(o){ ownerHourly[o] = {}; hours.forEach(function(h){ ownerHourly[o][h]={calls:0,connected:0}; }); });
+    const totalHourly = {};
+    hours.forEach(function(h){ totalHourly[h]={calls:0,connected:0}; });
+
+    calls.forEach(function(c) {
+        const caller = c['主叫'] || '';
+        if (!ownerHourly[caller]) return;
+        const dt = c['通话时间'];
+        if (!dt) return;
+        const d = new Date(dt);
+        const h = d.getHours();
+        if (h < 9 || h > 20) return;
+        ownerHourly[caller][h].calls++;
+        totalHourly[h].calls++;
+        if (c['接通状态'] === '接通') { ownerHourly[caller][h].connected++; totalHourly[h].connected++; }
+    });
+
+    const W = 900, callH = 220, lineH = 220;
+    const marginL = 52, marginR = 20, marginTop = 30, marginBot = 30;
+    const chartW = W - marginL - marginR;
+    const nH = hours.length;
+    const groupW = chartW / nH;
+
+    let maxCalls = 0;
+    owners.forEach(function(o){ hours.forEach(function(h){ if(ownerHourly[o][h].calls > maxCalls) maxCalls = ownerHourly[o][h].calls; }); });
+    maxCalls = Math.max(maxCalls, 10);
+    const callScale = (callH - marginTop - marginBot) / maxCalls;
+    function callY(v) { return callH - marginBot - v * callScale; }
+    function hourX(hi) { return marginL + hi * groupW + groupW / 2; }
+    let barSvg = '<svg viewBox="0 0 ' + W + ' ' + callH + '" width="100%" style="display:block;margin-bottom:4px;">';
+    [0,0.25,0.5,0.75,1].forEach(function(f){
+        const y = marginTop + (callH - marginTop - marginBot) * (1 - f);
+        const label = Math.round(maxCalls * f);
+        barSvg += '<line x1="' + marginL + '" y1="' + y + '" x2="' + (W-marginR) + '" y2="' + y + '" stroke="' + gridColor + '" stroke-width="1"/>';
+        barSvg += '<text x="' + (marginL-4) + '" y="' + (y+4) + '" font-size="9" fill="' + axisColor + '" text-anchor="end">' + label + '</text>';
+    });
+    hours.forEach(function(h, hi) {
+        barSvg += '<text x="' + hourX(hi) + '" y="' + (callH - marginBot + 14) + '" font-size="10" fill="' + labelColor + '" text-anchor="middle">' + h + '时</text>';
+    });
+    owners.forEach(function(o, oi) {
+        const pts = hours.map(function(h, hi) { return hourX(hi) + ',' + callY(ownerHourly[o][h].calls); });
+        barSvg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + lineColors[oi] + '" stroke-width="2.5" stroke-linejoin="round" opacity="0.95"/>';
+        hours.forEach(function(h, hi) {
+            const v = ownerHourly[o][h].calls;
+            const cx = hourX(hi), cy = callY(v);
+            barSvg += '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="' + lineColors[oi] + '">';
+            barSvg += '<title>' + o + ' ' + h + '时: ' + v + '次</title></circle>';
+            if (v > 0) {
+                barSvg += '<text x="' + cx + '" y="' + (cy - 7) + '" font-size="9" fill="' + lineColors[oi] + '" text-anchor="middle">' + v + '</text>';
+            }
+        });
+    });
+    owners.forEach(function(o, oi) {
+        const lx = marginL + oi * 110;
+        barSvg += '<line x1="' + lx + '" y1="14" x2="' + (lx+18) + '" y2="14" stroke="' + lineColors[oi] + '" stroke-width="2"/>';
+        barSvg += '<circle cx="' + (lx+9) + '" cy="14" r="3" fill="' + lineColors[oi] + '"/>';
+        barSvg += '<text x="' + (lx+22) + '" y="18" font-size="11" fill="' + labelColor + '">' + o + '</text>';
+    });
+    barSvg += '</svg>';
+
+    const yMin = 40, yMax = 100;
+    const lineScale = (lineH - marginTop - marginBot) / (yMax - yMin);
+    function rateY(r) { return lineH - marginBot - (r - yMin) * lineScale; }
+
+    let lineSvg = '<svg viewBox="0 0 ' + W + ' ' + lineH + '" width="100%" style="display:block;">';
+    [40,50,60,70,80,90,100].forEach(function(v){
+        const y = rateY(v);
+        lineSvg += '<line x1="' + marginL + '" y1="' + y + '" x2="' + (W-marginR) + '" y2="' + y + '" stroke="' + gridColor + '" stroke-width="1"/>';
+        lineSvg += '<text x="' + (marginL-4) + '" y="' + (y+4) + '" font-size="9" fill="' + axisColor + '" text-anchor="end">' + v + '%</text>';
+    });
+    const totalCalls = hours.reduce(function(s,h){ return s+totalHourly[h].calls; }, 0);
+    const totalConn  = hours.reduce(function(s,h){ return s+totalHourly[h].connected; }, 0);
+    const avgRate = totalCalls > 0 ? totalConn / totalCalls * 100 : 66.64;
+    const avgY = rateY(avgRate);
+    lineSvg += '<line x1="' + marginL + '" y1="' + avgY + '" x2="' + (W-marginR) + '" y2="' + avgY + '" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3"/>';
+    lineSvg += '<text x="' + (marginL+4) + '" y="' + (avgY-4) + '" font-size="10" fill="#f59e0b">均值 ' + avgRate.toFixed(1) + '%</text>';
+    owners.forEach(function(o, oi) {
+        const pts = hours.map(function(h, hi) {
+            const d = ownerHourly[o][h];
+            const r = d.calls > 0 ? d.connected / d.calls * 100 : null;
+            return r !== null ? (hourX(hi) + ',' + rateY(r)) : null;
+        }).filter(Boolean);
+        if (pts.length < 2) return;
+        lineSvg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + lineColors[oi] + '" stroke-width="2" stroke-linejoin="round" opacity="0.95"/>';
+        hours.forEach(function(h, hi) {
+            const d = ownerHourly[o][h];
+            if (d.calls === 0) return;
+            const r = d.connected / d.calls * 100;
+            const cx = hourX(hi), cy = rateY(r);
+            lineSvg += '<circle cx="' + cx + '" cy="' + cy + '" r="3.5" fill="' + lineColors[oi] + '">';
+            lineSvg += '<title>' + o + ' ' + h + '时: ' + r.toFixed(1) + '% (' + d.connected + '/' + d.calls + ')</title></circle>';
+        });
+    });
+    hours.forEach(function(h, hi) {
+        lineSvg += '<text x="' + hourX(hi) + '" y="' + (lineH - marginBot + 14) + '" font-size="10" fill="' + labelColor + '" text-anchor="middle">' + h + '时</text>';
+    });
+    owners.forEach(function(o, oi) {
+        const lx = marginL + oi * 110;
+        lineSvg += '<line x1="' + lx + '" y1="14" x2="' + (lx+18) + '" y2="14" stroke="' + lineColors[oi] + '" stroke-width="2"/>';
+        lineSvg += '<circle cx="' + (lx+9) + '" cy="14" r="3" fill="' + lineColors[oi] + '"/>';
+        lineSvg += '<text x="' + (lx+22) + '" y="18" font-size="11" fill="' + labelColor + '">' + o + '</text>';
+    });
+    lineSvg += '</svg>';
+
+    let tableHtml = '<table id="hourlyTable" style="margin-top:16px;"><thead><tr><th>时段</th>';
+    owners.forEach(function(o){ tableHtml += '<th colspan="2">' + o + '</th>'; });
+    tableHtml += '<th colspan="2">合计</th></tr>';
+    tableHtml += '<tr><th></th>';
+    owners.forEach(function(){ tableHtml += '<th>拨打</th><th>接通率</th>'; });
+    tableHtml += '<th>拨打</th><th>接通率</th></tr></thead><tbody>';
+
+    const totRow = {calls:0, connected:0};
+    const ownerTots = {};
+    owners.forEach(function(o){ ownerTots[o]={calls:0,connected:0}; });
+    hours.forEach(function(h) {
+        tableHtml += '<tr><td>' + h + '时</td>';
+        owners.forEach(function(o) {
+            const d = ownerHourly[o][h];
+            ownerTots[o].calls += d.calls;
+            ownerTots[o].connected += d.connected;
+            const r = d.calls > 0 ? (d.connected/d.calls*100).toFixed(1)+'%' : '-';
+            tableHtml += '<td>' + d.calls + '</td><td>' + r + '</td>';
+        });
+        const td = totalHourly[h];
+        totRow.calls += td.calls; totRow.connected += td.connected;
+        const tr = td.calls > 0 ? (td.connected/td.calls*100).toFixed(1)+'%' : '-';
+        tableHtml += '<td>' + td.calls + '</td><td>' + tr + '</td></tr>';
+    });
+    tableHtml += '<tr class="total-row"><td>合计</td>';
+    owners.forEach(function(o) {
+        const d = ownerTots[o];
+        const r = d.calls > 0 ? (d.connected/d.calls*100).toFixed(1)+'%' : '-';
+        tableHtml += '<td>' + d.calls + '</td><td>' + r + '</td>';
+    });
+    const gr = totRow.calls > 0 ? (totRow.connected/totRow.calls*100).toFixed(1)+'%' : '-';
+    tableHtml += '<td>' + totRow.calls + '</td><td>' + gr + '</td></tr>';
+    tableHtml += '</tbody></table>';
+
+    const wrap = document.getElementById('hourlyChartWrap');
+    if (wrap) {
+        wrap.innerHTML =
+            '<p style="font-size:12px;color:#6b7688;margin-bottom:8px;">上图：各时段拨打次数（折线图）&nbsp;&nbsp;下图：各负责人接通率折线图</p>' +
+            barSvg + lineSvg + tableHtml;
+    }
+}
+
+// ===== 通用：销售分组跟进表 =====
+function renderSalesGroupTable(leads, calls, dimField, dimLabel, tableId) {
+    const callsByPhone = {};
+    calls.forEach(function(c) {
+        const phone = normalizePhone(c['被叫号码']);
+        if (!callsByPhone[phone]) callsByPhone[phone] = [];
+        callsByPhone[phone].push(c);
+    });
+
+    const stats = {};
+    leads.forEach(function(l) {
+        const sales = getOwner(l);
+        if (sales === '人资部') return;
+        const dim = l[dimField] || '空白';
+        const key = sales + '|||' + dim;
+        if (!stats[key]) stats[key] = {sales:sales, dim:dim, leads:0, calls:0, connected:0, visited:0, deal:0, contract:0, received:0};
+        const s = stats[key];
+        if (inRange(toDateOnly(l['线索来源时间']))) s.leads++;
+        if (l['上门时间'] && inRange(toDateOnly(l['上门时间']))) s.visited++;
+        if (l['成交时间'] && inRange(toDateOnly(l['成交时间']))) {
+            if (numVal(l['合同金额']) >= 1000) s.deal++;
+            s.contract += numVal(l['合同金额']);
+            s.received += numVal(l['实收金额']);
+        }
+        const phone = normalizePhone(l['当事人电话']);
+        const lc = callsByPhone[phone] || [];
+        s.calls += lc.length;
+        lc.forEach(function(c){ if(c['接通状态']==='接通') s.connected++; });
+    });
+    const allRows = Object.values(stats);
+    const visitRates = allRows.map(function(s){ return s.leads > 0 ? s.visited / s.leads : 0; });
+    const dealRates  = allRows.map(function(s){ return s.visited > 0 ? s.deal / s.visited : 0; });
+    const avgVisit = visitRates.length ? visitRates.reduce(function(a,b){return a+b;},0) / visitRates.length : 0;
+    const avgDeal  = dealRates.length  ? dealRates.reduce(function(a,b){return a+b;},0)  / dealRates.length  : 0;
+
+    function rateCell(val, avg) {
+        const pctStr = (val * 100).toFixed(1) + '%';
+        if (avg === 0) return '<td>' + pctStr + '</td>';
+        if (val > avg) return '<td style="color:#ef4444;font-weight:700;">' + pctStr + ' ▲</td>';
+        if (val < avg) return '<td style="color:#3d6ef5;font-weight:700;">' + pctStr + ' ▼</td>';
+        return '<td>' + pctStr + '</td>';
+    }
+
+    const salesGroups = {};
+    allRows.forEach(function(s) {
+        if (!salesGroups[s.sales]) salesGroups[s.sales] = [];
+        salesGroups[s.sales].push(s);
+    });
+    const sortedSales = Object.keys(salesGroups).sort(function(a,b) {
+        return salesGroups[b].reduce(function(acc,s){return acc+s.leads;},0)
+             - salesGroups[a].reduce(function(acc,s){return acc+s.leads;},0);
+    });
+
+    const grandTot = {leads:0, calls:0, connected:0, visited:0, deal:0, contract:0, received:0};
+    let html = '<tr><th>' + dimLabel.split('|')[0] + '</th><th>' + dimLabel.split('|')[1] + '</th>'
+        + '<th>线索数</th><th>拨打</th><th>接通</th><th>平均拨打</th><th>平均接通</th><th>上门</th><th>成交</th>'
+        + '<th>上门率</th><th>成交率</th><th>合同金额</th><th>实收金额</th></tr>';
+
+    sortedSales.forEach(function(sales) {
+        const group = salesGroups[sales];
+        group.sort(function(a,b){ return b.leads - a.leads; });
+        const tot = {leads:0, calls:0, connected:0, visited:0, deal:0, contract:0, received:0};
+        group.forEach(function(s){ tot.leads+=s.leads; tot.calls+=s.calls; tot.connected+=s.connected; tot.visited+=s.visited; tot.deal+=s.deal; tot.contract+=s.contract; tot.received+=s.received; });
+        grandTot.leads+=tot.leads; grandTot.calls+=tot.calls; grandTot.connected+=tot.connected;
+        grandTot.visited+=tot.visited; grandTot.deal+=tot.deal; grandTot.contract+=tot.contract; grandTot.received+=tot.received;
+        const totVisitPct = tot.leads > 0 ? (tot.visited/tot.leads*100).toFixed(1)+'%' : '0.0%';
+        const totDealPct  = tot.visited > 0 ? (tot.deal/tot.visited*100).toFixed(1)+'%' : '0.0%';
+        html += '<tr class="sub-total-row"><td rowspan="' + (group.length+1) + '">' + sales + '</td>'
+            + '<td>合计</td><td>' + tot.leads + '</td><td>' + tot.calls + '</td><td>' + tot.connected + '</td>'
+            + '<td>' + (tot.leads>0?(tot.calls/tot.leads).toFixed(1):'0.0') + '</td><td>' + (tot.leads>0?(tot.connected/tot.leads).toFixed(1):'0.0') + '</td>'
+            + '<td>' + tot.visited + '</td><td>' + tot.deal + '</td>'
+            + '<td>' + totVisitPct + '</td><td>' + totDealPct + '</td>'
+            + '<td>' + fmt(tot.contract) + '</td><td>' + fmt(tot.received) + '</td></tr>';
+        group.forEach(function(s) {
+            const vr = s.leads > 0 ? s.visited / s.leads : 0;
+            const dr = s.visited > 0 ? s.deal / s.visited : 0;
+            html += '<tr><td>' + s.dim + '</td><td>' + s.leads + '</td><td>' + s.calls + '</td><td>' + s.connected + '</td>'
+                + '<td>' + (s.leads>0?(s.calls/s.leads).toFixed(1):'0.0') + '</td><td>' + (s.leads>0?(s.connected/s.leads).toFixed(1):'0.0') + '</td>'
+                + '<td>' + s.visited + '</td><td>' + s.deal + '</td>'
+                + rateCell(vr, avgVisit) + rateCell(dr, avgDeal)
+                + '<td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td></tr>';
+        });
+    });
+    const gVisitPct = grandTot.leads > 0 ? (grandTot.visited/grandTot.leads*100).toFixed(1)+'%' : '0.0%';
+    const gDealPct  = grandTot.visited > 0 ? (grandTot.deal/grandTot.visited*100).toFixed(1)+'%' : '0.0%';
+    html += '<tr class="total-row"><td>总合计</td><td>—</td><td>' + grandTot.leads + '</td><td>' + grandTot.calls + '</td><td>' + grandTot.connected + '</td>'
+        + '<td>' + (grandTot.leads>0?(grandTot.calls/grandTot.leads).toFixed(1):'0.0') + '</td><td>' + (grandTot.leads>0?(grandTot.connected/grandTot.leads).toFixed(1):'0.0') + '</td>'
+        + '<td>' + grandTot.visited + '</td><td>' + grandTot.deal + '</td>'
+        + '<td>' + gVisitPct + '</td><td>' + gDealPct + '</td>'
+        + '<td>' + fmt(grandTot.contract) + '</td><td>' + fmt(grandTot.received) + '</td></tr>';
+
+    document.getElementById(tableId).innerHTML = html;
+}
+
+function renderSalesAmount(leads, calls) {
+    renderSalesGroupTable(leads, calls, '标的额', '负责人|标的额', 'salesAmountTable');
+}
+function renderSalesCase(leads, calls) {
+    renderSalesGroupTable(leads, calls, '案件类型1', '负责人|案件类型', 'salesCaseTable');
+}
+
+// ===== Tab 3: 推广渠道汇总 =====
+function renderPromoChannel(promo) {
+    const rows = promo.filter(function(p) {
+        const ch = String(p['渠道'] || '').trim();
+        return ch && ch !== '汇总';
+    });
+    const stats = {};
+    rows.forEach(function(p) {
+        const ch = String(p['渠道']).trim();
+        if (!stats[ch]) stats[ch] = {impression:0, click:0, cost:0, convert:0, ab:0, visited:0, deal:0, dealAmt:0, received:0};
+        const s = stats[ch];
+        s.impression += numVal(p['展现']);
+        s.click += numVal(p['点击']);
+        s.cost += numVal(p['消费']);
+        s.convert += numVal(p['转化数']);
+        s.ab += numVal(p['ab商机量']);
+        s.visited += numVal(p['上门量']);
+        s.deal += numVal(p['成交量']);
+        s.dealAmt += numVal(p['成交金额']);
+        s.received += numVal(p['实收金额']);
+    });
+    const arr = Object.entries(stats).sort(function(a,b){ return b[1].cost - a[1].cost; });
+    const tot = {impression:0, click:0, cost:0, convert:0, ab:0, visited:0, deal:0, dealAmt:0, received:0};
+    arr.forEach(function(x){ const s=x[1]; tot.impression+=s.impression; tot.click+=s.click; tot.cost+=s.cost; tot.convert+=s.convert; tot.ab+=s.ab; tot.visited+=s.visited; tot.deal+=s.deal; tot.dealAmt+=s.dealAmt; tot.received+=s.received; });
+
+    let html = '<tr><th>渠道</th><th>展现</th><th>点击</th><th>点击率</th><th>消费</th><th>CPC</th><th>转化数</th><th>转化率</th><th>转化成本</th><th>AB商机量</th><th>上门量</th><th>成交量</th><th>成交金额</th><th>实收金额</th></tr>';
+    arr.forEach(function(x) {
+        const name=x[0]; const s=x[1];
+        const ctr = s.impression>0 ? (s.click/s.impression*100).toFixed(2)+'%' : '0.00%';
+        const cpc = s.click>0 ? (s.cost/s.click).toFixed(2) : '0.00';
+        const cvr = s.click>0 ? (s.convert/s.click*100).toFixed(2)+'%' : '0.00%';
+        const cpa = s.convert>0 ? (s.cost/s.convert).toFixed(2) : '0.00';
+        html += '<tr><td>' + name + '</td><td>' + s.impression + '</td><td>' + s.click + '</td><td>' + ctr + '</td><td>' + fmt(s.cost) + '</td><td>' + cpc + '</td><td>' + s.convert + '</td><td>' + cvr + '</td><td>' + cpa + '</td><td>' + s.ab + '</td><td>' + s.visited + '</td><td>' + s.deal + '</td><td>' + fmt(s.dealAmt) + '</td><td>' + fmt(s.received) + '</td></tr>';
+    });
+    const totCtr = tot.impression>0 ? (tot.click/tot.impression*100).toFixed(2)+'%' : '0.00%';
+    const totCpc = tot.click>0 ? (tot.cost/tot.click).toFixed(2) : '0.00';
+    const totCvr = tot.click>0 ? (tot.convert/tot.click*100).toFixed(2)+'%' : '0.00%';
+    const totCpa = tot.convert>0 ? (tot.cost/tot.convert).toFixed(2) : '0.00';
+    html += '<tr class="total-row"><td>合计</td><td>' + tot.impression + '</td><td>' + tot.click + '</td><td>' + totCtr + '</td><td>' + fmt(tot.cost) + '</td><td>' + totCpc + '</td><td>' + tot.convert + '</td><td>' + totCvr + '</td><td>' + totCpa + '</td><td>' + tot.ab + '</td><td>' + tot.visited + '</td><td>' + tot.deal + '</td><td>' + fmt(tot.dealAmt) + '</td><td>' + fmt(tot.received) + '</td></tr>';
+    document.getElementById('promoChannelTable').innerHTML = html;
+}
+
+// ===== Tab 4: 画像分析 =====
+var PIE_COLORS = ['#4472C4','#ED7D31','#A5A5A5','#FFC000','#70AD47','#5B9BD5','#C55A11','#7030A0'];
+
+function buildPieSvg(data, title) {
+    var total = data.reduce(function(s, d){ return s + d.value; }, 0);
+    if (total === 0) return '<div class="pie-wrap"><h4>' + title + '</h4><p style="color:#9aa4b4;font-size:12px;padding:30px 0;">暂无数据</p></div>';
+    var cx = 90, cy = 90, r = 75;
+    var startAngle = -Math.PI / 2;
+    var paths = '';
+    var labels = '';
+    data.forEach(function(d, i) {
+        var slice = d.value / total * Math.PI * 2;
+        var endAngle = startAngle + slice;
+        var largeArc = slice > Math.PI ? 1 : 0;
+        var x1 = cx + r * Math.cos(startAngle);
+        var y1 = cy + r * Math.sin(startAngle);
+        var x2 = cx + r * Math.cos(endAngle);
+        var y2 = cy + r * Math.sin(endAngle);
+        var color = PIE_COLORS[i % PIE_COLORS.length];
+        paths += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(2) + ',' + y1.toFixed(2) + ' A' + r + ',' + r + ' 0 ' + largeArc + ',1 ' + x2.toFixed(2) + ',' + y2.toFixed(2) + ' Z" fill="' + color + '"><title>' + d.name + ': ' + d.value + '</title></path>';
+        var pctVal = (d.value / total * 100).toFixed(0);
+        if (pctVal >= 5) {
+            var midAngle = startAngle + slice / 2;
+            var labelR = r * 0.6;
+            var lx = cx + labelR * Math.cos(midAngle);
+            var ly = cy + labelR * Math.sin(midAngle);
+            labels += '<text x="' + lx.toFixed(1) + '" y="' + (ly + 1).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">' + pctVal + '%</text>';
+            labels += '<text x="' + lx.toFixed(1) + '" y="' + (ly + 13).toFixed(1) + '" text-anchor="middle" font-size="9" fill="#fff" opacity="0.85">' + d.value + '</text>';
+        }
+        startAngle = endAngle;
+    });
+    var legend = data.map(function(d, i) {
+        return '<span class="pie-legend-item"><span class="pie-legend-dot" style="background:' + PIE_COLORS[i % PIE_COLORS.length] + '"></span>' + d.name + ' ' + (d.value/total*100).toFixed(1) + '%</span>';
+    }).join('');
+    return '<div class="pie-wrap"><h4>' + title + '</h4><svg viewBox="0 0 180 180" width="160" height="160">' + paths + labels + '</svg><div class="pie-legend">' + legend + '</div></div>';
+}
+
+function countField(items, field) {
+    var map = {};
+    items.forEach(function(l) {
+        var v = (l[field] || '').trim() || '未知';
+        map[v] = (map[v] || 0) + 1;
+    });
+    return Object.entries(map).sort(function(a,b){ return b[1]-a[1]; }).map(function(e){ return {name:e[0], value:e[1]}; });
+}
+
+function renderProfiles(leads) {
+    var srcFilter = document.getElementById('profileSource').value;
+    var caseFilter = document.getElementById('profileCaseType').value;
+    var amtFilter = document.getElementById('profileAmount').value;
+    var contractFilter = document.getElementById('profileContract').value;
+
+    var filtered = leads.filter(function(l) {
+        if (srcFilter && (l['线索来源'] || '') !== srcFilter) return false;
+        if (caseFilter && (l['案件类型1'] || '') !== caseFilter) return false;
+        if (amtFilter && (l['标的额'] || '') !== amtFilter) return false;
+        if (contractFilter) {
+            if (!l['成交时间']) return false;
+            var cv = numVal(l['合同金额']);
+            if (contractFilter === '0-1000' && (cv <= 0 || cv >= 1000)) return false;
+            if (contractFilter === '1000-3000' && (cv < 1000 || cv >= 3000)) return false;
+            if (contractFilter === '3000-6000' && (cv < 3000 || cv >= 6000)) return false;
+            if (contractFilter === '6000-10000' && (cv < 6000 || cv >= 10000)) return false;
+            if (contractFilter === '10000-30000' && (cv < 10000 || cv >= 30000)) return false;
+            if (contractFilter === '30000+' && cv < 30000) return false;
+        }
+        return true;
+    });
+
+    var leadsInRange = filtered.filter(function(l){ return inRange(toDateOnly(l['线索来源时间'])); });
+    var visitInRange = filtered.filter(function(l){ return l['上门时间'] && inRange(toDateOnly(l['上门时间'])); });
+    var dealInRange = filtered.filter(function(l){ return l['成交时间'] && inRange(toDateOnly(l['成交时间'])); });
+
+    var fields = ['性别','年龄','咨询类型'];
+    var titles = ['性别分布','年龄分布','咨询类型分布'];
+
+    var groups = [
+        {data: leadsInRange, el: 'profileLeads'},
+        {data: visitInRange, el: 'profileVisit'},
+        {data: dealInRange, el: 'profileDeal'}
+    ];
+    window.__profileData = {};
+    groups.forEach(function(g) {
+        var html = '';
+        var cache = [];
+        fields.forEach(function(f, i) {
+            var rows = countField(g.data, f);
+            cache.push({title: titles[i], field: f, rows: rows});
+            html += buildPieSvg(rows, titles[i]);
+        });
+        document.getElementById(g.el).innerHTML = html;
+        window.__profileData[g.el] = cache;
+    });
+
+    updateProfileFilters(leads);
+}
+
+function updateProfileFilters(leads) {
+    var sources = new Set(), cases = new Set(), amounts = new Set();
+    leads.forEach(function(l) {
+        if (l['线索来源']) sources.add(l['线索来源']);
+        if (l['案件类型1']) cases.add(l['案件类型1']);
+        if (l['标的额']) amounts.add(l['标的额']);
+    });
+    fillSelect('profileSource', sources, '全部来源');
+    fillSelect('profileCaseType', cases, '全部案件类型');
+    fillSelect('profileAmount', amounts, '全部标的额');
+}
+
+function fillSelect(id, valuesSet, defaultLabel) {
+    var el = document.getElementById(id);
+    var current = el.value;
+    var opts = '<option value="">' + defaultLabel + '</option>';
+    Array.from(valuesSet).sort().forEach(function(v) {
+        opts += '<option value="' + v + '"' + (v === current ? ' selected' : '') + '>' + v + '</option>';
+    });
+    el.innerHTML = opts;
+}
+
+function resetProfileFilters() {
+    document.getElementById('profileSource').value = '';
+    document.getElementById('profileCaseType').value = '';
+    document.getElementById('profileAmount').value = '';
+    document.getElementById('profileContract').value = '';
+    renderProfiles(filteredLeads());
+}
+
+// ===== Tab 5: 大额标的（标的额 10 万以上）=====
+var LARGE_AMOUNT_BUCKETS = ['10-30万', '30万以上'];
+function isLargeAmount(l) { return LARGE_AMOUNT_BUCKETS.indexOf((l['标的额'] || '').trim()) !== -1; }
+
+// 内容一：负责人 → 标的额 → 案件类型 的分配与转化情况
+function renderLargeAmount(leads) {
+    var large = leads.filter(isLargeAmount);
+    // 三级聚合：sales -> amount -> caseType
+    var map = {};
+    large.forEach(function(l) {
+        var sales = getOwner(l);
+        if (sales === '人资部') return;
+        var amt = (l['标的额'] || '').trim();
+        var ct = l['案件类型1'] || '空白';
+        var key = sales + '|||' + amt + '|||' + ct;
+        if (!map[key]) map[key] = {sales:sales, amt:amt, ct:ct, leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+        var s = map[key];
+        if (inRange(toDateOnly(l['线索来源时间']))) {
+            s.leads++;
+            var q = l['线索质量'] || '';
+            if (q === 'A' || q === 'B') s.ab++;
+        }
+        if (l['上门时间'] && inRange(toDateOnly(l['上门时间']))) s.visited++;
+        if (l['成交时间'] && inRange(toDateOnly(l['成交时间']))) {
+            if (numVal(l['合同金额']) >= 1000) s.deal++;
+            s.contract += numVal(l['合同金额']);
+            s.received += numVal(l['实收金额']);
+        }
+    });
+
+    // 组织为 sales -> 行数组（按 标的额 顺序、再按线索数排序）
+    var amtOrder = LARGE_AMOUNT_BUCKETS;
+    var bySales = {};
+    Object.values(map).forEach(function(s) {
+        (bySales[s.sales] = bySales[s.sales] || []).push(s);
+    });
+    var sortedSales = Object.keys(bySales).sort(function(a, b) {
+        var sa = bySales[a].reduce(function(t,s){return t+s.leads;}, 0);
+        var sb = bySales[b].reduce(function(t,s){return t+s.leads;}, 0);
+        return sb - sa;
+    });
+
+    var head = '<tr><th>负责人</th><th>标的额</th><th>案件类型</th><th>线索数</th><th>AB商机数</th><th>AB占比</th>'
+        + '<th>上门</th><th>成交</th><th>上门率</th><th>成交率</th><th>合同金额</th><th>已收费用</th><th>客单价</th></tr>';
+    var html = head;
+    var grand = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+
+    sortedSales.forEach(function(sales) {
+        var rows = bySales[sales];
+        rows.sort(function(a, b) {
+            var ai = amtOrder.indexOf(a.amt), bi = amtOrder.indexOf(b.amt);
+            if (ai !== bi) return ai - bi;
+            return b.leads - a.leads;
+        });
+        var sub = {leads:0, ab:0, visited:0, deal:0, contract:0, received:0};
+        rows.forEach(function(s){ sub.leads+=s.leads; sub.ab+=s.ab; sub.visited+=s.visited; sub.deal+=s.deal; sub.contract+=s.contract; sub.received+=s.received; });
+        grand.leads+=sub.leads; grand.ab+=sub.ab; grand.visited+=sub.visited; grand.deal+=sub.deal; grand.contract+=sub.contract; grand.received+=sub.received;
+
+        // 相同标的额合并为一个单元格：记录每个分组首行的跨行数
+        var amtSpan = {};
+        for (var a = 0; a < rows.length;) {
+            var b = a;
+            while (b < rows.length && rows[b].amt === rows[a].amt) b++;
+            amtSpan[a] = b - a;
+            a = b;
+        }
+
+        rows.forEach(function(s, i) {
+            html += '<tr>';
+            if (i === 0) html += '<td rowspan="' + (rows.length + 1) + '" class="la-owner" data-owner="' + esc(sales) + '" onclick="onLargeOwnerClick(\'' + esc(sales).replace(/'/g, "\\'") + '\')" title="点击仅查看 ' + esc(sales) + ' 的大额标的线索详情" style="font-weight:600;color:var(--text);"><span class="la-owner-name">' + sales + '</span></td>';
+            if (amtSpan[i]) html += '<td rowspan="' + amtSpan[i] + '">' + s.amt + '</td>';
+            html += '<td>' + s.ct + '</td><td>' + s.leads + '</td><td>' + s.ab + '</td><td>' + pct(s.ab, s.leads) + '</td>'
+                + '<td>' + s.visited + '</td><td>' + s.deal + '</td><td>' + pct(s.visited, s.leads) + '</td><td>' + pct(s.deal, s.visited) + '</td>'
+                + '<td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td><td>' + (s.deal > 0 ? (s.contract / s.deal).toFixed(2) : '0.00') + '</td></tr>';
+        });
+        html += '<tr class="sub-total-row"><td>小计</td><td>—</td><td>' + sub.leads + '</td><td>' + sub.ab + '</td><td>' + pct(sub.ab, sub.leads) + '</td>'
+            + '<td>' + sub.visited + '</td><td>' + sub.deal + '</td><td>' + pct(sub.visited, sub.leads) + '</td><td>' + pct(sub.deal, sub.visited) + '</td>'
+            + '<td>' + fmt(sub.contract) + '</td><td>' + fmt(sub.received) + '</td><td>' + (sub.deal > 0 ? (sub.contract / sub.deal).toFixed(2) : '0.00') + '</td></tr>';
+    });
+
+    if (sortedSales.length === 0) {
+        html += '<tr><td colspan="13" style="color:var(--text-3);padding:24px;">当前筛选范围内暂无 10 万以上标的的线索</td></tr>';
+    } else {
+        html += '<tr class="total-row"><td>合计</td><td>—</td><td>—</td><td>' + grand.leads + '</td><td>' + grand.ab + '</td><td>' + pct(grand.ab, grand.leads) + '</td>'
+            + '<td>' + grand.visited + '</td><td>' + grand.deal + '</td><td>' + pct(grand.visited, grand.leads) + '</td><td>' + pct(grand.deal, grand.visited) + '</td>'
+            + '<td>' + fmt(grand.contract) + '</td><td>' + fmt(grand.received) + '</td><td>' + (grand.deal > 0 ? (grand.contract / grand.deal).toFixed(2) : '0.00') + '</td></tr>';
+    }
+    document.getElementById('largeAmountTable').innerHTML = html;
+}
+
+// 内容二：大额标的线索详情 + 一键查看全部字段
+var LD_BLANK = '__BLANK__'; // 「空白」筛选哨兵值
+var LARGE_FIELD_ORDER = [
+    'ID','负责人','前负责人','线索来源时间','线索来源时段','当事人姓名','当事人电话','微信号',
+    '国家','省','市','区','性别','年龄','线索来源','咨询类型','线索质量','案件类型1','案件类型2',
+    '标的额','跟进状态','未跟进天数','情况说明','微信添加情况','预约时间','是否上门','上门时间',
+    '成交时间','合同金额','实收金额','收费形式','备注','最新跟进记录','最新跟进时间','首次分配时间',
+    '实际跟进时间','负责人最新变更时间','下次跟进时间'
+];
+function renderLargeDetail(leads) {
+    var large = leads.filter(isLargeAmount).filter(function(l){ return getOwner(l) !== '人资部'; });
+    // 排序：按线索来源时间倒序
+    large.sort(function(a, b) {
+        return toDateOnly(b['线索来源时间']).localeCompare(toDateOnly(a['线索来源时间']));
+    });
+    window.__largeLeads = large; // modal 按索引取数
+
+    // 填充多选下拉（保留当前已勾选值）
+    function fillMs(id, values, includeBlank) {
+        var box = document.getElementById(id);
+        if (!box) return;
+        var prev = {};
+        box.querySelectorAll('input:checked').forEach(function(c){ prev[c.value] = 1; });
+        var opts = values.slice();
+        if (includeBlank) opts.push(LD_BLANK);
+        var panel = box.querySelector('.ms-panel');
+        panel.innerHTML = opts.map(function(v) {
+            var text = v === LD_BLANK ? '（空白）' : v;
+            var checked = prev[v] ? ' checked' : '';
+            return '<label class="ms-opt"><input type="checkbox" value="' + esc(v) + '"' + checked
+                + ' onchange="onMsChange(\'' + id + '\')"> <span>' + text + '</span></label>';
+        }).join('');
+        updateMsLabel(id);
+    }
+    function uniq(field) {
+        var s = {};
+        large.forEach(function(l){ var v = String(l[field] == null ? '' : l[field]).trim(); if (v) s[v] = 1; });
+        return Object.keys(s).sort();
+    }
+    function hasBlank(field) {
+        return large.some(function(l){ return !String(l[field] == null ? '' : l[field]).trim(); });
+    }
+    var owners = {};
+    large.forEach(function(l){ owners[getOwner(l)] = 1; });
+    fillMs('ldOwner', Object.keys(owners).sort());
+    fillMs('ldStatus', uniq('跟进状态'), hasBlank('跟进状态'));
+    fillMs('ldVisit', uniq('是否上门'), hasBlank('是否上门'));
+
+    var head = '<tr><th>序号</th><th>负责人</th><th>标的额</th><th>案件类型</th><th>当事人</th><th>线索来源</th>'
+        + '<th>线索时间</th><th>跟进状态</th><th>是否上门</th><th>成交时间</th><th>合同金额</th><th>全部字段</th></tr>';
+    var html = head;
+    large.forEach(function(l, i) {
+        html += '<tr class="ld-row" data-owner="' + esc(getOwner(l)) + '" data-status="' + esc(l['跟进状态'] || '') + '" data-visit="' + esc(l['是否上门'] || '') + '">'
+            + '<td class="ld-seq"></td><td>' + getOwner(l) + '</td><td>' + (l['标的额'] || '') + '</td>'
+            + '<td>' + (l['案件类型1'] || '') + '</td><td>' + (l['当事人姓名'] || '') + '</td><td>' + (l['线索来源'] || '') + '</td>'
+            + '<td>' + toDateOnly(l['线索来源时间']) + '</td><td>' + (l['跟进状态'] || '') + '</td><td>' + (l['是否上门'] || '') + '</td>'
+            + '<td>' + toDateOnly(l['成交时间']) + '</td><td>' + fmt(numVal(l['合同金额'])) + '</td>'
+            + '<td><span class="detail-link" onclick="showLeadDetail(' + i + ')">📋 查看全部字段</span></td></tr>';
+    });
+    if (large.length === 0) {
+        html = head + '<tr id="ldEmpty"><td colspan="12" style="color:var(--text-3);padding:24px;">当前筛选范围内暂无 10 万以上标的的线索</td></tr>';
+    }
+    document.getElementById('largeDetailTable').innerHTML = html;
+    applyLargeDetailFilter();
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
+
+// ===== Tab 6: 小额成交（合同金额 1000 以下）=====
+// 当期成交（成交时间在范围内）且合同金额 < 1000 的线索
+function isSmallDeal(l) {
+    return l['成交时间'] && inRange(toDateOnly(l['成交时间'])) && numVal(l['合同金额']) < 1000;
+}
+
+// 内容一：各销售小额成交汇总（成交数、合同额、已收费用、客单价）
+// 销售姓名可点击，点击后过滤下方明细；点击合计或重复点击当前选中行可清除筛选
+function renderSmallDeal(leads) {
+    var stats = {};
+    leads.forEach(function(l) {
+        if (!isSmallDeal(l)) return;
+        var sales = getOwner(l);
+        if (sales === '人资部') return;
+        if (!stats[sales]) stats[sales] = {deal:0, contract:0, received:0};
+        var s = stats[sales];
+        s.deal++;
+        s.contract += numVal(l['合同金额']);
+        s.received += numVal(l['实收金额']);
+    });
+
+    var arr = Object.entries(stats).sort(function(a, b){ return b[1].deal - a[1].deal; });
+    var tot = {deal:0, contract:0, received:0};
+    arr.forEach(function(x){ var s=x[1]; tot.deal+=s.deal; tot.contract+=s.contract; tot.received+=s.received; });
+
+    // 当前所选销售若已不存在于结果中（例如切换日期范围），自动清除
+    if (window.__smallSalesFilter && !stats[window.__smallSalesFilter]) {
+        window.__smallSalesFilter = '';
+    }
+
+    var html = '<tr><th>销售</th><th>小额成交数</th><th>合同额</th><th>已收费用</th><th>客单价</th></tr>';
+    arr.forEach(function(x) {
+        var name=x[0], s=x[1];
+        var activeCls = (window.__smallSalesFilter === name) ? ' active' : '';
+        html += '<tr class="sd-sales-row' + activeCls + '" onclick="onSmallSalesClick(\'' + esc(name).replace(/'/g, "\\'") + '\')" title="点击仅查看 ' + esc(name) + ' 的小额成交明细">'
+            + '<td>' + name + '</td><td>' + s.deal + '</td><td>' + fmt(s.contract) + '</td><td>' + fmt(s.received) + '</td><td>' + (s.deal>0?(s.contract/s.deal).toFixed(2):'0.00') + '</td></tr>';
+    });
+    if (arr.length === 0) {
+        html += '<tr><td colspan="5" style="color:var(--text-3);padding:24px;">当前筛选范围内暂无合同金额 1000 以下的成交</td></tr>';
+    } else {
+        html += '<tr class="total-row" style="cursor:pointer;" onclick="clearSmallSalesFilter()" title="点击清除销售筛选"><td>合计</td><td>' + tot.deal + '</td><td>' + fmt(tot.contract) + '</td><td>' + fmt(tot.received) + '</td><td>' + (tot.deal>0?(tot.contract/tot.deal).toFixed(2):'0.00') + '</td></tr>';
+    }
+    document.getElementById('smallDealTable').innerHTML = html;
+}
+
+// 销售点击：相同则取消，否则切换为该销售
+function onSmallSalesClick(name) {
+    window.__smallSalesFilter = (window.__smallSalesFilter === name) ? '' : name;
+    // 同步表头高亮 + 重渲染明细
+    document.querySelectorAll('#smallDealTable .sd-sales-row').forEach(function(tr) {
+        var firstTd = tr.querySelector('td');
+        var rowName = firstTd ? firstTd.textContent : '';
+        tr.classList.toggle('active', rowName === window.__smallSalesFilter);
+    });
+    applySmallSalesFilter();
+}
+function clearSmallSalesFilter() {
+    if (!window.__smallSalesFilter) return;
+    window.__smallSalesFilter = '';
+    document.querySelectorAll('#smallDealTable .sd-sales-row.active').forEach(function(tr){ tr.classList.remove('active'); });
+    applySmallSalesFilter();
+}
+
+// 内容二：小额成交线索详情（按成交时间倒序；可受上方销售点击筛选影响）
+function renderSmallDetail(leads) {
+    var small = leads.filter(isSmallDeal).filter(function(l){ return getOwner(l) !== '人资部'; });
+    small.sort(function(a, b) {
+        return toDateOnly(b['成交时间']).localeCompare(toDateOnly(a['成交时间']));
+    });
+    window.__smallLeadsAll = small;
+    applySmallSalesFilter();
+}
+
+// 应用销售筛选，重渲染明细表 + 更新提示
+function applySmallSalesFilter() {
+    var all = window.__smallLeadsAll || [];
+    var filterName = window.__smallSalesFilter || '';
+    var data = filterName ? all.filter(function(l){ return getOwner(l) === filterName; }) : all;
+    window.__smallLeads = data; // 供 modal & 导出按当前筛选取数
+
+    var head = '<tr><th>序号</th><th>销售</th><th>线索来源</th><th>案件类型</th><th>标的额</th><th>当事人</th>'
+        + '<th>线索时间</th><th>成交时间</th><th>合同金额</th><th>已收费用</th><th>全部字段</th></tr>';
+    var html = head;
+    data.forEach(function(l, i) {
+        html += '<tr><td>' + (i + 1) + '</td><td>' + getOwner(l) + '</td><td>' + (l['线索来源'] || '') + '</td>'
+            + '<td>' + (l['案件类型1'] || '') + '</td><td>' + (l['标的额'] || '') + '</td><td>' + (l['当事人姓名'] || '') + '</td>'
+            + '<td>' + toDateOnly(l['线索来源时间']) + '</td><td>' + toDateOnly(l['成交时间']) + '</td>'
+            + '<td>' + fmt(numVal(l['合同金额'])) + '</td><td>' + fmt(numVal(l['实收金额'])) + '</td>'
+            + '<td><span class="detail-link" onclick="showSmallDetail(' + i + ')">📋 查看全部字段</span></td></tr>';
+    });
+    if (data.length === 0) {
+        var emptyMsg = filterName
+            ? '当前筛选范围内 ' + filterName + ' 暂无合同金额 1000 以下的成交'
+            : '当前筛选范围内暂无合同金额 1000 以下的成交';
+        html = head + '<tr><td colspan="11" style="color:var(--text-3);padding:24px;">' + emptyMsg + '</td></tr>';
+    }
+    document.getElementById('smallDetailTable').innerHTML = html;
+
+    // 更新提示条
+    var tip = document.getElementById('smallDetailFilterTip');
+    var resetBtn = document.getElementById('smallDetailResetBtn');
+    var cnt = document.getElementById('smallDetailCount');
+    if (tip) {
+        if (filterName) {
+            tip.innerHTML = '当前仅展示 <b style="color:var(--primary);">' + filterName + '</b> 的小额成交';
+        } else {
+            tip.textContent = '未筛选 · 可点击上方销售姓名进行筛选';
+        }
+    }
+    if (resetBtn) resetBtn.style.display = filterName ? '' : 'none';
+    if (cnt) {
+        cnt.textContent = filterName
+            ? '共 ' + data.length + ' 条（全部 ' + all.length + ' 条）'
+            : '共 ' + all.length + ' 条';
+    }
+}
+
+
+// ===== 多选下拉控件 =====
+function getMsValues(id) {
+    var box = document.getElementById(id);
+    if (!box) return [];
+    return Array.prototype.map.call(box.querySelectorAll('input:checked'), function(c){ return c.value; });
+}
+function updateMsLabel(id) {
+    var box = document.getElementById(id);
+    if (!box) return;
+    var sel = getMsValues(id);
+    var labelEl = box.querySelector('.ms-label');
+    var base = box.getAttribute('data-label');
+    if (sel.length === 0) {
+        labelEl.textContent = '全部' + base;
+    } else {
+        var texts = sel.map(function(v){ return v === LD_BLANK ? '（空白）' : v; });
+        labelEl.textContent = texts.length <= 2 ? texts.join('、') : (base + ' · ' + texts.length + ' 项');
+    }
+}
+function toggleMs(id) {
+    var box = document.getElementById(id);
+    var willOpen = !box.classList.contains('open');
+    document.querySelectorAll('.ms.open').forEach(function(m){ m.classList.remove('open'); });
+    if (willOpen) box.classList.add('open');
+}
+function onMsChange(id) {
+    updateMsLabel(id);
+    applyLargeDetailFilter();
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.ms')) document.querySelectorAll('.ms.open').forEach(function(m){ m.classList.remove('open'); });
+});
+
+function applyLargeDetailFilter() {
+    var fo = getMsValues('ldOwner');
+    var fs = getMsValues('ldStatus');
+    var fv = getMsValues('ldVisit');
+    function match(sel, val) {
+        if (!sel.length) return true;          // 未选 = 全部
+        if (sel.indexOf(LD_BLANK) !== -1 && !val) return true;
+        return sel.indexOf(val) !== -1;
+    }
+    var rows = document.querySelectorAll('#largeDetailTable tr.ld-row');
+    var n = 0;
+    rows.forEach(function(tr) {
+        var ok = match(fo, tr.getAttribute('data-owner'))
+              && match(fs, tr.getAttribute('data-status'))
+              && match(fv, tr.getAttribute('data-visit'));
+        tr.style.display = ok ? '' : 'none';
+        if (ok) { n++; var seq = tr.querySelector('.ld-seq'); if (seq) seq.textContent = n; }
+    });
+    var active = fo.length || fs.length || fv.length;
+    var cnt = document.getElementById('ldCount');
+    if (cnt) cnt.textContent = '共 ' + n + ' 条' + (active ? '（已筛选 / 全部 ' + rows.length + ' 条）' : '');
+    syncLargeOwnerHighlight();
+}
+
+function resetLargeDetailFilter() {
+    ['ldOwner', 'ldStatus', 'ldVisit'].forEach(function(id) {
+        var box = document.getElementById(id);
+        if (!box) return;
+        box.querySelectorAll('input:checked').forEach(function(c){ c.checked = false; });
+        box.classList.remove('open');
+        updateMsLabel(id);
+    });
+    applyLargeDetailFilter();
+}
+
+// 点击「大额标的数据情况」中的负责人：驱动下方详情的 ldOwner 多选筛选
+// 再次点击同一负责人则取消，仅展示该负责人的明细（与小额成交点击行为一致）
+function onLargeOwnerClick(name) {
+    var box = document.getElementById('ldOwner');
+    if (!box) return;
+    var checked = getMsValues('ldOwner');
+    var isOnly = checked.length === 1 && checked[0] === name;
+    // 先全部取消
+    box.querySelectorAll('input:checked').forEach(function(c){ c.checked = false; });
+    if (!isOnly) {
+        // 勾选目标负责人
+        box.querySelectorAll('input').forEach(function(c){ if (c.value === name) c.checked = true; });
+    }
+    updateMsLabel('ldOwner');
+    applyLargeDetailFilter();
+    // 滚动到详情区，方便查看
+    if (!isOnly) {
+        var sec = document.getElementById('sec-large-detail');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// 同步「大额标的数据情况」中负责人单元格的高亮（与 ldOwner 选择保持一致）
+function syncLargeOwnerHighlight() {
+    var sel = getMsValues('ldOwner');
+    document.querySelectorAll('#largeAmountTable .la-owner').forEach(function(td) {
+        td.classList.toggle('active', sel.indexOf(td.getAttribute('data-owner')) !== -1);
+    });
+}
+
+function showLeadDetail(idx) {
+    renderLeadDetailModal((window.__largeLeads || [])[idx], idx);
+}
+function showSmallDetail(idx) {
+    renderLeadDetailModal((window.__smallLeads || [])[idx], idx);
+}
+function renderLeadDetailModal(l, idx) {
+    if (!l) return;
+    // 字段顺序：先按已知顺序，再补充原始表中其它字段
+    var keys = LARGE_FIELD_ORDER.filter(function(k){ return k in l; });
+    Object.keys(l).forEach(function(k){ if (keys.indexOf(k) === -1) keys.push(k); });
+    var rows = keys.map(function(k) {
+        var v = l[k];
+        if (v instanceof Date) v = toDateOnly(v);
+        var empty = (v === '' || v === null || v === undefined);
+        return '<div class="dk">' + k + '</div><div class="dv' + (empty ? ' empty' : '') + '">' + (empty ? '（空）' : String(v)) + '</div>';
+    }).join('');
+    document.getElementById('leadDetailTitle').textContent =
+        '线索全部字段 · ' + (l['当事人姓名'] || l['ID'] || ('第' + (idx + 1) + '条'));
+    document.getElementById('leadDetailBody').innerHTML = '<div class="detail-grid">' + rows + '</div>';
+    document.getElementById('leadDetailModal').classList.add('open');
+}
+function closeLeadDetail() {
+    document.getElementById('leadDetailModal').classList.remove('open');
+}
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') document.getElementById('leadDetailModal').classList.remove('open'); });
+
+// ===== Excel 导出 =====
+const SECTION_REGISTRY = {
+    overview:     {sheet:'综合数据',         table:'overviewTable'},
+    sales:        {sheet:'销售成交分析',     table:'salesTable'},
+    channel:      {sheet:'分渠道分析',       table:'channelTable'},
+    history:      {sheet:'历史线索成交',     table:'historyTable', extra:'historyDetailTable', extraSheet:'历史成交明细'},
+    amount:       {sheet:'案源结构-标的额',   table:'amountTable'},
+    caseType:     {sheet:'案源结构-案件类型', table:'caseTypeTable'},
+    behavior:     {sheet:'销售跟进行为',     table:'behaviorTable'},
+    hourly:       {sheet:'时段拨打接通率',   table:'hourlyTable'},
+    salesAmount:  {sheet:'销售-标的额跟进',   table:'salesAmountTable'},
+    salesCase:    {sheet:'销售-案件类型跟进', table:'salesCaseTable'},
+    promo:        {sheet:'推广渠道汇总',     table:'promoChannelTable'},
+    profileLeads: {sheet:'线索画像',         profile:'profileLeads'},
+    profileVisit: {sheet:'上门画像',         profile:'profileVisit'},
+    profileDeal:  {sheet:'成交画像',         profile:'profileDeal'},
+    largeAmount:  {sheet:'大额标的数据情况',  table:'largeAmountTable'},
+    largeDetail:  {sheet:'大额标的线索详情',  table:'largeDetailTable', builder:function(){ return largeDetailToSheet(); }},
+    smallDeal:    {sheet:'小额成交汇总',      table:'smallDealTable'},
+    smallDetail:  {sheet:'小额成交线索详情',  table:'smallDetailTable', builder:function(){ return smallDetailToSheet(); }}
+};
+
+function getDateSuffix() {
+    if (filterStart && filterEnd) return '_' + filterStart + '_' + filterEnd;
+    return '_' + new Date().toISOString().slice(0,10);
+}
+
+function tableToSheet(tableId) {
+    var t = document.getElementById(tableId);
+    if (!t || !t.rows || t.rows.length === 0) return null;
+    return XLSX.utils.table_to_sheet(t, {raw:false, display:true});
+}
+
+function profileToSheet(profileKey) {
+    var data = (window.__profileData || {})[profileKey];
+    if (!data || data.length === 0) return null;
+    var aoa = [];
+    data.forEach(function(group) {
+        aoa.push([group.title]);
+        aoa.push(['名称','数量','占比']);
+        var total = group.rows.reduce(function(s,r){return s+r.value;}, 0);
+        group.rows.forEach(function(r) {
+            var pct = total > 0 ? (r.value/total*100).toFixed(2)+'%' : '0%';
+            aoa.push([r.name, r.value, pct]);
+        });
+        aoa.push([]);
+    });
+    return XLSX.utils.aoa_to_sheet(aoa);
+}
+
+function buildSheet(key) {
+    var c = SECTION_REGISTRY[key];
+    if (!c) return null;
+    if (c.builder) return c.builder();
+    return c.profile ? profileToSheet(c.profile) : tableToSheet(c.table);
+}
+
+// 大额标的线索详情导出：完整原始字段，每条线索一行（与表内筛选一致）
+function largeDetailToSheet() {
+    var all = window.__largeLeads || [];
+    var fo = getMsValues('ldOwner');
+    var fs = getMsValues('ldStatus');
+    var fv = getMsValues('ldVisit');
+    function ldMatch(sel, val) {
+        if (!sel.length) return true;
+        var v = String(val == null ? '' : val).trim();
+        if (sel.indexOf(LD_BLANK) !== -1 && !v) return true;
+        return sel.indexOf(v) !== -1;
+    }
+    var data = all.filter(function(l) {
+        return ldMatch(fo, getOwner(l))
+            && ldMatch(fs, l['跟进状态'])
+            && ldMatch(fv, l['是否上门']);
+    });
+    if (!data.length) return null;
+    var keys = LARGE_FIELD_ORDER.filter(function(k){ return data.some(function(l){ return k in l; }); });
+    data.forEach(function(l){ Object.keys(l).forEach(function(k){ if (keys.indexOf(k) === -1) keys.push(k); }); });
+    var aoa = [keys];
+    data.forEach(function(l) {
+        aoa.push(keys.map(function(k) {
+            var v = l[k];
+            if (v instanceof Date) v = toDateOnly(v);
+            return (v === null || v === undefined) ? '' : v;
+        }));
+    });
+    return XLSX.utils.aoa_to_sheet(aoa);
+}
+
+// 小额成交线索详情导出：完整原始字段，每条线索一行
+function smallDetailToSheet() {
+    var data = window.__smallLeads || [];
+    if (!data.length) return null;
+    var keys = LARGE_FIELD_ORDER.filter(function(k){ return data.some(function(l){ return k in l; }); });
+    data.forEach(function(l){ Object.keys(l).forEach(function(k){ if (keys.indexOf(k) === -1) keys.push(k); }); });
+    var aoa = [keys];
+    data.forEach(function(l) {
+        aoa.push(keys.map(function(k) {
+            var v = l[k];
+            if (v instanceof Date) v = toDateOnly(v);
+            return (v === null || v === undefined) ? '' : v;
+        }));
+    });
+    return XLSX.utils.aoa_to_sheet(aoa);
+}
+
+function safeName(n) { return (n || '').substring(0, 31); }
+
+function exportSection(key) {
+    var c = SECTION_REGISTRY[key];
+    if (!c) return alert('未知报表');
+    var ws = buildSheet(key);
+    if (!ws) return alert('该报表暂无数据，请先上传文件');
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, safeName(c.sheet));
+    if (c.extra) {
+        var ws2 = tableToSheet(c.extra);
+        if (ws2) XLSX.utils.book_append_sheet(wb, ws2, safeName(c.extraSheet));
+    }
+    XLSX.writeFile(wb, c.sheet + getDateSuffix() + '.xlsx');
+}
+
+function exportAllReports() {
+    var wb = XLSX.utils.book_new();
+    var added = 0;
+    Object.keys(SECTION_REGISTRY).forEach(function(key) {
+        var c = SECTION_REGISTRY[key];
+        var ws = buildSheet(key);
+        if (ws) {
+            XLSX.utils.book_append_sheet(wb, ws, safeName(c.sheet));
+            added++;
+            if (c.extra) {
+                var ws2 = tableToSheet(c.extra);
+                if (ws2) XLSX.utils.book_append_sheet(wb, ws2, safeName(c.extraSheet));
+            }
+        }
+    });
+    if (added === 0) return alert('暂无可导出报表，请先上传数据');
+    XLSX.writeFile(wb, '法律推广数据看板' + getDateSuffix() + '.xlsx');
+}
+
+// ===== Init =====
+window.onload = function() {
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    filterStart = toDateStr(lastMonth);
+    filterEnd = toDateStr(lastMonthEnd);
+    document.getElementById('startDate').value = filterStart;
+    document.getElementById('endDate').value = filterEnd;
+
+    Promise.all([
+        dbGet('leads1'), dbGet('leads2'), dbGet('leads3'), dbGet('leads4'),
+        dbGet('promo'), dbGet('calls')
+    ]).then(function(arr) {
+        const labelMap = { 0:['btnLeads1','在跟进 ✓'], 1:['btnLeads2','7天未跟进 ✓'], 2:['btnLeads3','无效 ✓'], 3:['btnLeads4','终止 ✓'] };
+        if (arr[0]) { leadsSlots.leads1 = arr[0]; document.getElementById(labelMap[0][0]).classList.add('success'); document.getElementById(labelMap[0][0]).textContent = labelMap[0][1]; }
+        if (arr[1]) { leadsSlots.leads2 = arr[1]; document.getElementById(labelMap[1][0]).classList.add('success'); document.getElementById(labelMap[1][0]).textContent = labelMap[1][1]; }
+        if (arr[2]) { leadsSlots.leads3 = arr[2]; document.getElementById(labelMap[2][0]).classList.add('success'); document.getElementById(labelMap[2][0]).textContent = labelMap[2][1]; }
+        if (arr[3]) { leadsSlots.leads4 = arr[3]; document.getElementById(labelMap[3][0]).classList.add('success'); document.getElementById(labelMap[3][0]).textContent = labelMap[3][1]; }
+        leadsData = [].concat(leadsSlots.leads1, leadsSlots.leads2, leadsSlots.leads3, leadsSlots.leads4);
+        if (arr[4]) { promoData = arr[4]; document.getElementById('btnPromo').classList.add('success'); document.getElementById('btnPromo').textContent = '推广日报 ✓'; }
+        if (arr[5]) { callsData = arr[5]; document.getElementById('btnCalls').classList.add('success'); document.getElementById('btnCalls').textContent = '通话流水 ✓'; }
+
+        const hasAny = leadsData.length || promoData.length || callsData.length;
+        if (hasAny) {
+            renderDashboard();
+        } else {
+            document.getElementById('dataInfo').innerHTML =
+                '未检测到已保存数据<br><span style="color:#6b7688;">请使用顶部按钮上传数据文件</span>';
+        }
+        updateLastSync();
+    }).catch(function(err) {
+        console.error('IndexedDB 读取失败', err);
+        document.getElementById('dataInfo').innerHTML =
+            '本地存储不可用<br><span style="color:#6b7688;">请使用顶部按钮上传数据文件</span>';
+    });
+};
+
+function updateLastSync() {
+    dbGet('updatedAt').then(function(t) {
+        const el = document.getElementById('lastSync');
+        if (!el) return;
+        if (t) {
+            const d = new Date(t);
+            el.textContent = '上次更新：' + d.toLocaleString('zh-CN', {hour12: false});
+        } else {
+            el.textContent = '尚未上传数据';
+        }
+    });
+}
+
+function clearAllData() {
+    if (!confirm('确认清空本地所有数据吗？此操作不可撤销。')) return;
+    dbClear().then(function() {
+        location.reload();
+    });
+}
+</script>
+</body>
+</html>
